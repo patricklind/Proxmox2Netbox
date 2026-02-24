@@ -3,10 +3,11 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site
-from extras.models.tags import Tag
+from extras.models.tags import Tag, TaggedItem
 from virtualization.models import Cluster, ClusterType, VMInterface, VirtualMachine
 
 from proxmoxer import ProxmoxAPI
@@ -27,6 +28,24 @@ class EndpointSession:
     client: Any
     host: str
     version: dict = field(default_factory=dict)
+
+
+def _safe_add_tag(obj: Any, tag: Tag) -> None:
+    if obj.pk is None:
+        return
+    content_type = ContentType.objects.get_for_model(obj, for_concrete_model=False)
+    qs = TaggedItem.objects.filter(
+        content_type=content_type,
+        object_id=obj.pk,
+        tag=tag,
+    ).order_by("pk")
+    first = qs.first()
+    if first is not None:
+        duplicate_qs = qs.exclude(pk=first.pk)
+        if duplicate_qs.exists():
+            duplicate_qs.delete()
+        return
+    TaggedItem.objects.create(content_type=content_type, object_id=obj.pk, tag=tag)
 
 
 def _endpoint_hosts(endpoint: ProxmoxEndpoint) -> list[str]:
@@ -185,14 +204,16 @@ def _ensure_base_objects(mode: str) -> dict[str, Any]:
 
 
 def _upsert_cluster(cluster_name: str, cluster_type: ClusterType, tag: Tag) -> Cluster:
-    cluster, created = Cluster.objects.get_or_create(
-        name=cluster_name,
-        defaults={"type": cluster_type},
-    )
-    if not created and cluster.type_id != cluster_type.id:
+    clusters = Cluster.objects.filter(name=cluster_name).order_by("pk")
+    cluster = clusters.first()
+    created = False
+    if cluster is None:
+        cluster = Cluster.objects.create(name=cluster_name, type=cluster_type)
+        created = True
+    elif cluster.type_id != cluster_type.id:
         cluster.type = cluster_type
         cluster.save(update_fields=["type"])
-    cluster.tags.add(tag)
+    _safe_add_tag(cluster, tag)
     return cluster
 
 
@@ -239,7 +260,6 @@ def _upsert_vm_interfaces(
 
     for default_iface_name, attrs in _extract_vm_config_networks(vm_config):
         iface_name = attrs.get("name", default_iface_name)
-        mac_address = attrs.get("virtio") or attrs.get("hwaddr")
 
         iface, created = VMInterface.objects.get_or_create(
             virtual_machine=vm,
@@ -247,23 +267,19 @@ def _upsert_vm_interfaces(
             defaults={
                 "enabled": True,
                 "description": "Imported from Proxmox",
-                "mac_address": mac_address,
             },
         )
         if created:
             created_count += 1
         else:
             changed = False
-            if mac_address and iface.mac_address != mac_address:
-                iface.mac_address = mac_address
-                changed = True
             if not iface.enabled:
                 iface.enabled = True
                 changed = True
             if changed:
                 iface.save()
                 updated_count += 1
-        iface.tags.add(tag)
+        _safe_add_tag(iface, tag)
 
     return created_count, updated_count
 
@@ -317,7 +333,7 @@ def _upsert_devices_for_session(session: EndpointSession) -> dict[str, int]:
             if changed:
                 device.save()
                 updated += 1
-        device.tags.add(base["tag"])
+        _safe_add_tag(device, base["tag"])
 
     return {"created_devices": created, "updated_devices": updated}
 
@@ -370,7 +386,7 @@ def _upsert_virtual_machines_for_session(session: EndpointSession) -> dict[str, 
                 vm.save()
                 updated_vm += 1
 
-        vm.tags.add(base["tag"])
+        _safe_add_tag(vm, base["tag"])
 
         if node_name and vmid:
             iface_created, iface_updated = _upsert_vm_interfaces(

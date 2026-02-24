@@ -9,8 +9,8 @@ try:
 except Exception as error:
     print(error)
     
-from netbox_proxbox import ProxboxConfig
 from netbox_proxbox import github
+from netbox_proxbox.utils import get_fastapi_url
 
 # Import other proxbox views
 from .external_pages import *
@@ -22,8 +22,7 @@ from .sync_process import *
 from .sync import *
 from .vm_backup import *
 
-from netbox_proxbox.models import ProxmoxEndpoint, NetBoxEndpoint, FastAPIEndpoint
-from netbox_proxbox.utils import get_fastapi_url
+from netbox_proxbox.models import ProxmoxEndpoint, FastAPIEndpoint
 
 class HomeView(View):
     """
@@ -48,76 +47,19 @@ class HomeView(View):
     
     template_name = 'netbox_proxbox/home.html'
 
-    @staticmethod
-    def _ensure_default_endpoints():
-        """
-        Auto-bootstrap internal endpoints so the plugin works out-of-the-box.
-        Users should only need to configure Proxmox credentials.
-        """
-        if not NetBoxEndpoint.objects.exists():
-            try:
-                NetBoxEndpoint.objects.create(
-                    name='NetBox Endpoint',
-                    domain='localhost',
-                    port=8080,
-                    verify_ssl=False,
-                )
-            except Exception as error:
-                print(f'Error creating default NetBox endpoint: {error}')
-
-        if not FastAPIEndpoint.objects.exists():
-            try:
-                FastAPIEndpoint.objects.create(
-                    name='ProxBox Endpoint',
-                    domain='localhost',
-                    port=8800,
-                    verify_ssl=False,
-                    use_websocket=False,
-                    websocket_port=8800,
-                )
-            except Exception as error:
-                print(f'Error creating default FastAPI endpoint: {error}')
-
     # service incoming GET HTTP requests
     def get(self, request):
         """Get request."""
-        
-        default_config = dict =  getattr(ProxboxConfig, 'default_settings', {})
-        
-        fastapi_example_url: str = 'https://example.fastapi.com',
-        fastapi_exampel_websocket_url: str = 'wss://example.fastapi.com'
-                
-                
-        self._ensure_default_endpoints()
 
         proxmox_endpoint_obj = ProxmoxEndpoint.objects.all()
         if proxmox_endpoint_obj.count() <= 0:
             proxmox_endpoint_obj = None
 
-        netbox_endpoint_obj = NetBoxEndpoint.objects.all()
-        if netbox_endpoint_obj.count() <= 0:
-            netbox_endpoint_obj = None
-
-        fastapi_endpoint_obj = FastAPIEndpoint.objects.all()
-        if fastapi_endpoint_obj.count() <= 0:
-            fastapi_endpoint_obj = None
-
-        fastapi_info = {}
-        if fastapi_endpoint_obj is not None:
-            # Get first object from FastAPIEndpoint queryset.
-            fastapi_object = fastapi_endpoint_obj[0]
-            fastapi_info = get_fastapi_url(fastapi_object)
-        
         return render(
             request,
             self.template_name,
             {
-                "default_config": default_config,
                 'proxmox_endpoint_list': proxmox_endpoint_obj,
-                'netbox_endpoint_list': netbox_endpoint_obj,
-                'fastapi_endpoint_list': fastapi_endpoint_obj,
-                'fastapi_url': fastapi_info.get('http_url', fastapi_example_url),
-                'fastapi_websocket_url': fastapi_info.get('websocket_url', fastapi_exampel_websocket_url)
             }
         )
 
