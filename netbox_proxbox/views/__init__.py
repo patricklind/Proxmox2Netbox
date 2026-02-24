@@ -5,21 +5,95 @@ try:
     from netbox import configuration
 except Exception as error:
     print(error)
-    
 from netbox_proxbox import github
-from netbox_proxbox.utils import get_fastapi_url as get_fastapi_url
 
-# Import other proxbox views
-from .external_pages import *
-from .proxbox_backend import *
-from .endpoints import  *
-from .keepalive_status import *
-from .cards import *
-from .sync_process import *
-from .sync import *
-from .vm_backup import *
+from .cards import get_proxmox_card
+from .endpoints import (
+    FastAPIEndpointDeleteView,
+    FastAPIEndpointEditView,
+    FastAPIEndpointListView,
+    FastAPIEndpointView,
+    NetBoxEndpointDeleteView,
+    NetBoxEndpointEditView,
+    NetBoxEndpointListView,
+    NetBoxEndpointView,
+    ProxmoxEndpointDeleteView,
+    ProxmoxEndpointEditView,
+    ProxmoxEndpointListView,
+    ProxmoxEndpointView,
+)
+from .external_pages import DiscordView, DiscussionsView, TelegramView
+from .keepalive_status import get_service_status
+from .proxbox_backend import (
+    FixProxboxBackendView,
+    RestartProxboxBackendView,
+    StatusProxboxBackendView,
+    StopProxboxBackendView,
+)
+from .sync import sync_devices, sync_full_update, sync_virtual_machines, sync_vm_backups
+from .sync_process import (
+    SyncProcessAddView,
+    SyncProcessDeleteView,
+    SyncProcessEditView,
+    SyncProcessListView,
+    SyncProcessView,
+)
+from .vm_backup import (
+    VMBackupAddView,
+    VMBackupBulkDeleteView,
+    VMBackupDeleteView,
+    VMBackupEditView,
+    VMBackupListView,
+    VMBackupTabView,
+    VMBackupView,
+)
 
 from netbox_proxbox.models import ProxmoxEndpoint
+
+__all__ = (
+    "CommunityView",
+    "ContributingView",
+    "DiscordView",
+    "DiscussionsView",
+    "FastAPIEndpointDeleteView",
+    "FastAPIEndpointEditView",
+    "FastAPIEndpointListView",
+    "FastAPIEndpointView",
+    "FixProxboxBackendView",
+    "HomeView",
+    "NetBoxEndpointDeleteView",
+    "NetBoxEndpointEditView",
+    "NetBoxEndpointListView",
+    "NetBoxEndpointView",
+    "NodesView",
+    "ProxmoxEndpointDeleteView",
+    "ProxmoxEndpointEditView",
+    "ProxmoxEndpointListView",
+    "ProxmoxEndpointView",
+    "RestartProxboxBackendView",
+    "StatusProxboxBackendView",
+    "StopProxboxBackendView",
+    "SyncProcessAddView",
+    "SyncProcessDeleteView",
+    "SyncProcessEditView",
+    "SyncProcessListView",
+    "SyncProcessView",
+    "TelegramView",
+    "VMBackupAddView",
+    "VMBackupBulkDeleteView",
+    "VMBackupDeleteView",
+    "VMBackupEditView",
+    "VMBackupListView",
+    "VMBackupTabView",
+    "VMBackupView",
+    "VirtualMachinesView",
+    "get_proxmox_card",
+    "get_service_status",
+    "sync_devices",
+    "sync_full_update",
+    "sync_virtual_machines",
+    "sync_vm_backups",
+)
 
 class HomeView(View):
     """

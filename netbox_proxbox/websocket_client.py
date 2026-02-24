@@ -1,6 +1,6 @@
 import asyncio
 import websockets
-from netbox_proxbox.views import get_fastapi_url
+from netbox_proxbox.utils import get_fastapi_url
 from netbox_proxbox.models import FastAPIEndpoint
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse

@@ -5,7 +5,7 @@ from django.views.decorators.http import require_GET
 
 from django_htmx.middleware import HtmxDetails
 
-from netbox_proxbox.proxmox_sync import (
+from netbox_proxbox.services.proxmox_sync import (
     ProxmoxSyncError,
     sync_devices as sync_devices_service,
     sync_full_update as sync_full_update_service,

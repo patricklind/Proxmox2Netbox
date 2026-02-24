@@ -5,7 +5,7 @@ from django.views.decorators.http import require_GET
 from django_htmx.middleware import HtmxDetails
 
 from netbox_proxbox.models import ProxmoxEndpoint
-from netbox_proxbox.proxmox_sync import check_endpoint_connection
+from netbox_proxbox.services.proxmox_sync import check_endpoint_connection
 
 
 class HtmxHttpRequest(HttpRequest):

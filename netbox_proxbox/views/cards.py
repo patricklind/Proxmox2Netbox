@@ -7,7 +7,7 @@ from django.views.decorators.http import require_GET
 from django_htmx.middleware import HtmxDetails
 
 from netbox_proxbox.models import ProxmoxEndpoint
-from netbox_proxbox.proxmox_sync import get_endpoint_cluster_summary
+from netbox_proxbox.services.proxmox_sync import get_endpoint_cluster_summary
 
 logger = logging.getLogger(__name__)
 

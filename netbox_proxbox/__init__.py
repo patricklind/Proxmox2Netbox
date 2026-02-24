@@ -14,4 +14,8 @@ class ProxboxConfig(PluginConfig):
     base_url = "proxbox"
     required_settings = []
 
+    def ready(self):
+        super().ready()
+        from . import jobs  # noqa: F401
+
 config = ProxboxConfig

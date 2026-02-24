@@ -1,9 +1,4 @@
-"""Compatibility shim for the Proxmox sync service layer.
-
-The sync implementation lives in ``netbox_proxbox.services.proxmox_sync``.
-Keep importing from ``netbox_proxbox.proxmox_sync`` to avoid breaking
-existing callers.
-"""
+"""Service layer for runtime-critical Proxbox logic."""
 
 from netbox_proxbox.services.proxmox_sync import (
     ProxmoxSyncError,
