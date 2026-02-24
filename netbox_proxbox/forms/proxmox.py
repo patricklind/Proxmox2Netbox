@@ -36,7 +36,7 @@ class ProxmoxEndpointForm(NetBoxModelForm):
     comments = CommentField()
 
     def clean(self):
-        cleaned_data = super().clean()
+        cleaned_data = super().clean() or {}
 
         password = (cleaned_data.get('password') or '').strip()
         token_name = (cleaned_data.get('token_name') or '').strip()
