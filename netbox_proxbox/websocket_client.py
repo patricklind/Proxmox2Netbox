@@ -73,7 +73,6 @@ def start_websocket(uri):
         print('WebSocket task started.')
 
 def stop_websocket():
-    global websocket_task
     if websocket_task:
         websocket_task.cancel()
         print('WebSocket task stopped.')
@@ -98,7 +97,6 @@ class WebSocketView(View):
         bulk_messages_count = 20
         # Declare the global variable to store the messages
         global GLOBAL_WEBSOCKET_MESSAGES
-        global websocket_task
         
         # Ensure thread safety for message access
         with websocket_lock:
