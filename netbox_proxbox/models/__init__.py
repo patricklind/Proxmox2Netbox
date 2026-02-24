@@ -2,6 +2,7 @@ from django.urls import reverse
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator 
+from django.core.exceptions import ValidationError
 
 from netbox.models import NetBoxModel
 from netbox.models.features import JournalingMixin
@@ -76,17 +77,23 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
     password = models.CharField(
         max_length=255,
         verbose_name=_('Password'),
-        help_text=_('Password of the Proxmox Endpoint. It is not needed if you use Token.'),
+        help_text=_('Password for Proxmox login auth. Optional if you use API token auth.'),
         blank=True,
         null=True,
     )
     token_name = models.CharField(
         max_length=255,
         verbose_name=_('Token Name'),
+        help_text=_('API token name for Proxmox token auth. Optional if password auth is used.'),
+        blank=True,
+        default='',
     )
     token_value = models.CharField(
         max_length=255,
         verbose_name=_('Token Value'),
+        help_text=_('API token value/secret for Proxmox token auth. Optional if password auth is used.'),
+        blank=True,
+        default='',
     )
     verify_ssl = models.BooleanField(
         default=False,
@@ -98,7 +105,33 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
         verbose_name_plural: str = "Proxmox Endpoints"
         unique_together = ['name', 'ip_address', 'domain']
         ordering = ('name',)
-        
+
+    def clean(self):
+        super().clean()
+
+        password = (self.password or '').strip()
+        token_name = (self.token_name or '').strip()
+        token_value = (self.token_value or '').strip()
+
+        has_password = bool(password)
+        has_token_name = bool(token_name)
+        has_token_value = bool(token_value)
+        has_token_auth = has_token_name and has_token_value
+
+        # Password auth is enough on its own.
+        # Only enforce token pair validation when password auth is not used.
+        if not has_password:
+            if has_token_name and not has_token_value:
+                raise ValidationError({'token_value': _('Token Value is required when Token Name is set.')})
+
+            if has_token_value and not has_token_name:
+                raise ValidationError({'token_name': _('Token Name is required when Token Value is set.')})
+
+            if not has_token_auth:
+                raise ValidationError(
+                    _('Provide either username/password or username with both Token Name and Token Value.')
+                )
+
     def __str__(self):
         return f"{self.name} ({self.ip_address})"
     

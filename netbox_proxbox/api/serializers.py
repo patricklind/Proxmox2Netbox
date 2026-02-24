@@ -107,6 +107,36 @@ class ProxmoxEndpointSerializer(NetBoxModelSerializer):
             'tags', 'custom_fields', 'created', 'last_updated',
         )
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+
+        instance = getattr(self, 'instance', None)
+
+        def get_value(field_name):
+            if field_name in attrs:
+                return (attrs.get(field_name) or '').strip()
+            if instance is not None:
+                return (getattr(instance, field_name, '') or '').strip()
+            return ''
+
+        password = get_value('password')
+        token_name = get_value('token_name')
+        token_value = get_value('token_value')
+
+        if not password:
+            if token_name and not token_value:
+                raise serializers.ValidationError({'token_value': 'Token Value is required when Token Name is set.'})
+
+            if token_value and not token_name:
+                raise serializers.ValidationError({'token_name': 'Token Name is required when Token Value is set.'})
+
+            if not (token_name and token_value):
+                raise serializers.ValidationError(
+                    'Provide either username/password or username with both Token Name and Token Value.'
+                )
+
+        return attrs
+
 
 class NetBoxEndpointSerializer(NetBoxModelSerializer):
     url = serializers.HyperlinkedIdentityField(

@@ -1,104 +1,74 @@
-import requests
-
-# Django Imports
+from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
-from django.views import View
-from django.views.decorators.http import require_GET
 from django.shortcuts import render
+from django.views.decorators.http import require_GET
 
-# Django-HTMX Imports
 from django_htmx.middleware import HtmxDetails
 
-# Proxbox Imports
-from netbox_proxbox.utils import get_fastapi_url
-from netbox_proxbox.models import FastAPIEndpoint
-
-from threading import Thread
+from netbox_proxbox.proxmox_sync import (
+    ProxmoxSyncError,
+    sync_devices as sync_devices_service,
+    sync_full_update as sync_full_update_service,
+    sync_virtual_machines as sync_virtual_machines_service,
+)
 
 
 class HtmxHttpRequest(HttpRequest):
     htmx: HtmxDetails
 
-CONNECTED_URL_SUCCESSFUL = None
 
-fastapi_service_obj = None
-# Get the first FastAPI Endpoint object
-try:
-    fastapi_service_obj = FastAPIEndpoint.objects.first()
-except Exception as errr:
-    print(f'Error occurred getting FastAPI Endpoint object: {errr}')
+def _run_sync(request: HtmxHttpRequest, template_name: str, sync_callable) -> HttpResponse:
+    result = {}
+    try:
+        result = sync_callable()
+        if result.get("errors"):
+            messages.warning(
+                request,
+                f"Sync completed with {len(result['errors'])} error(s). Check details below.",
+            )
+        else:
+            messages.success(request, "Sync completed successfully.")
+    except ProxmoxSyncError as exc:
+        messages.error(request, str(exc))
+        result = {"errors": [str(exc)]}
+    except Exception as exc:  # noqa: BLE001
+        messages.error(request, f"Unexpected sync error: {exc}")
+        result = {"errors": [str(exc)]}
 
-if fastapi_service_obj:
-    # Get the FastAPI URL
-    fastapi_detail = get_fastapi_url(fastapi_service_obj)
-    fastapi_url: str = fastapi_detail.get('http_url', None)
-    fastapi_verify_ssl: bool = fastapi_detail.get('verify_ssl', True)
+    return render(request, template_name, {"result": result})
 
-def sync_resource(request: HtmxHttpRequest, path: str, template_name: str, query_params: dict = None) -> HttpResponse:
-    global CONNECTED_URL_SUCCESSFUL
-
-    fastapi_path: str = f'{fastapi_url}/{path}' if fastapi_url else None
-
-    if not fastapi_url:
-        return HttpResponse(status=404, content='No FastAPI URL found')
-
-    def make_request():
-        try:
-            response = requests.get(fastapi_path, params=query_params, verify=fastapi_verify_ssl)
-            if response.ok:
-                print(f'FastAPI response: {response.json()}')
-                CONNECTED_URL_SUCCESSFUL = fastapi_url
-            else:
-                response.raise_for_status()
-        except Exception as errr:
-            try:
-                print(f'Error occurred: {errr}')
-
-                # Try to connect to FastAPI using the IP address and port.
-                print(f'Trying to connect to FastAPI using the IP address and port: {fastapi_detail.get("ip_address_url")}')
-                response = requests.get(fastapi_detail.get('ip_address_url') + f'/{path}', params=query_params, verify=False)
-                print(f'FastAPI response: {response.json()}')
-                CONNECTED_URL_SUCCESSFUL = fastapi_detail.get('ip_address_url')
-            except Exception as errr:
-                print(f'Error occurred: {errr}')
-                raise
-
-    # Run the request in a separate thread
-    Thread(target=make_request).start()
-
-    return render(request, template_name)
 
 @require_GET
 def sync_devices(request: HtmxHttpRequest) -> HttpResponse:
-    return sync_resource(
-        request,
-        path='dcim/devices/create',
-        template_name='netbox_proxbox/sync_devices.html'
+    return _run_sync(
+        request=request,
+        template_name="netbox_proxbox/sync_devices.html",
+        sync_callable=sync_devices_service,
     )
+
 
 @require_GET
 def sync_virtual_machines(request: HtmxHttpRequest) -> HttpResponse:
-    return sync_resource(
-        request,
-        path='virtualization/virtual-machines/create',
-        template_name='netbox_proxbox/sync_virtual_machines.html'
+    return _run_sync(
+        request=request,
+        template_name="netbox_proxbox/sync_virtual_machines.html",
+        sync_callable=sync_virtual_machines_service,
     )
+
 
 @require_GET
 def sync_full_update(request: HtmxHttpRequest) -> HttpResponse:
-    return sync_resource(
-        request,
-        path='full-update',
-        template_name='netbox_proxbox/sync_full_update.html'
+    return _run_sync(
+        request=request,
+        template_name="netbox_proxbox/sync_full_update.html",
+        sync_callable=sync_full_update_service,
     )
+
 
 @require_GET
 def sync_vm_backups(request: HtmxHttpRequest) -> HttpResponse:
-    return sync_resource(
+    messages.info(
         request,
-        path='virtualization/virtual-machines/backups/all/create',
-        query_params={
-            'delete_nonexistent_backup': True
-        },
-        template_name='netbox_proxbox/sync_vm_backups.html'
+        "VM backup sync is not yet available in out-of-the-box mode. Devices and virtual machines are supported.",
     )
+    return render(request, "netbox_proxbox/sync_vm_backups.html", {"result": {}})

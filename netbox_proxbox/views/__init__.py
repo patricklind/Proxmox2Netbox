@@ -48,6 +48,36 @@ class HomeView(View):
     
     template_name = 'netbox_proxbox/home.html'
 
+    @staticmethod
+    def _ensure_default_endpoints():
+        """
+        Auto-bootstrap internal endpoints so the plugin works out-of-the-box.
+        Users should only need to configure Proxmox credentials.
+        """
+        if not NetBoxEndpoint.objects.exists():
+            try:
+                NetBoxEndpoint.objects.create(
+                    name='NetBox Endpoint',
+                    domain='localhost',
+                    port=8080,
+                    verify_ssl=False,
+                )
+            except Exception as error:
+                print(f'Error creating default NetBox endpoint: {error}')
+
+        if not FastAPIEndpoint.objects.exists():
+            try:
+                FastAPIEndpoint.objects.create(
+                    name='ProxBox Endpoint',
+                    domain='localhost',
+                    port=8800,
+                    verify_ssl=False,
+                    use_websocket=False,
+                    websocket_port=8800,
+                )
+            except Exception as error:
+                print(f'Error creating default FastAPI endpoint: {error}')
+
     # service incoming GET HTTP requests
     def get(self, request):
         """Get request."""
@@ -58,20 +88,18 @@ class HomeView(View):
         fastapi_exampel_websocket_url: str = 'wss://example.fastapi.com'
                 
                 
+        self._ensure_default_endpoints()
+
         proxmox_endpoint_obj = ProxmoxEndpoint.objects.all()
-        proxmox_endpoint_count = proxmox_endpoint_obj.count()
-        if proxmox_endpoint_count <= 0:
+        if proxmox_endpoint_obj.count() <= 0:
             proxmox_endpoint_obj = None
-        
-            
+
         netbox_endpoint_obj = NetBoxEndpoint.objects.all()
-        netbox_endpoint_count = netbox_endpoint_obj.count()
-        if netbox_endpoint_count <= 0:
+        if netbox_endpoint_obj.count() <= 0:
             netbox_endpoint_obj = None
-        
+
         fastapi_endpoint_obj = FastAPIEndpoint.objects.all()
-        fastapi_endpoint_count = fastapi_endpoint_obj.count()
-        if fastapi_endpoint_count <= 0:
+        if fastapi_endpoint_obj.count() <= 0:
             fastapi_endpoint_obj = None
 
         fastapi_info = {}

@@ -17,12 +17,3 @@ class DomainField(models.CharField):
         kwargs['max_length'] = 253  # Maximum length of a domain name is 253 characters
         super().__init__(*args, **kwargs)
         self.validators.append(validate_domain)
-
-# Testing the validate_domain function separately
-try:
-    validate_domain("example.com")  # Valid domain
-    validate_domain("sub.example.com")  # Valid domain
-    validate_domain("localhost")    # Valid localhost
-    validate_domain("invalid_domain") # Invalid domain
-except ValidationError as e:
-    print(e)
