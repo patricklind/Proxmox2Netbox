@@ -36,7 +36,11 @@ class ProxmoxEndpointForm(NetBoxModelForm):
     comments = CommentField()
 
     def clean(self):
-        cleaned_data = super().clean() or {}
+        cleaned_data = super().clean()
+        if cleaned_data is None:
+            # NetBox 4.5 form stack may return None from parent clean().
+            # In that case, validated field values are already in self.cleaned_data.
+            cleaned_data = getattr(self, 'cleaned_data', {}) or {}
 
         password = (cleaned_data.get('password') or '').strip()
         token_name = (cleaned_data.get('token_name') or '').strip()
