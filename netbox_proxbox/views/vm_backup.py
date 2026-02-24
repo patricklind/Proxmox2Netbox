@@ -41,7 +41,6 @@ class VMBackupListView(generic.ObjectListView):
     actions = {
         'bulk_delete': {'delete'},
         'export': {'view'},
-        'sync_backups': {'view'},
     }
     
     def get_required_permission(self):
