@@ -28,5 +28,30 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+exclude = [
+    "/.git",
+    "/.github",
+    "/.venv*",
+    "/.ruff_cache",
+    "/dist",
+    "/build",
+    "/__pycache__",
+    "**/__pycache__",
+    "**/*.py[cod]",
+    "**/.DS_Store",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/netbox_proxbox",
+    "/README.md",
+    "/CONTRIBUTING.md",
+    "/FASTAPI.md",
+    "/LICENSE",
+    "/MANIFEST.in",
+    "/pyproject.toml",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["netbox_proxbox"]

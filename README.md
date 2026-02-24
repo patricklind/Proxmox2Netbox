@@ -39,7 +39,7 @@ Primary runtime entrypoints:
 
 ## Installation (NetBox v4)
 
-## 1. Install plugin package
+### 1. Install plugin package
 
 Inside NetBox environment:
 
@@ -47,7 +47,7 @@ Inside NetBox environment:
 pip install netbox-proxbox
 ```
 
-## 2. Enable plugin
+### 2. Enable plugin
 
 In NetBox `configuration.py`:
 
@@ -55,7 +55,7 @@ In NetBox `configuration.py`:
 PLUGINS = ["netbox_proxbox"]
 ```
 
-## 3. Optional `PLUGINS_CONFIG`
+### 3. Optional `PLUGINS_CONFIG`
 
 No required plugin settings for core sync.
 
@@ -74,7 +74,7 @@ PLUGINS_CONFIG = {
 }
 ```
 
-## 4. Run migrations/static
+### 4. Run migrations/static
 
 ```bash
 python manage.py migrate netbox_proxbox
@@ -83,7 +83,7 @@ python manage.py collectstatic --no-input
 
 ## Configure and Run Sync
 
-## Configure Proxmox Endpoint
+### Configure Proxmox Endpoint
 
 In NetBox UI:
 
@@ -93,7 +93,7 @@ In NetBox UI:
   - either `password` **or** (`token_name` + `token_value`)
   - host via `domain` and/or `ip_address`
 
-## Run sync from UI
+### Run sync from UI
 
 - `Plugins -> Proxbox -> Full Update`
 - Available actions:
@@ -101,7 +101,7 @@ In NetBox UI:
   - `Sync Virtual Machines`
   - `Full Update Sync`
 
-## Run sync as NetBox Job (wrapper)
+### Run sync as NetBox Job (wrapper)
 
 `jobs.py` provides a queue-compatible wrapper around the existing service layer.
 
@@ -133,27 +133,52 @@ They are kept for legacy compatibility paths and should be treated as optional u
 
 ## Development & Validation
 
-## Static checks
+### Static checks
 
 ```bash
 ruff check netbox_proxbox --select F401,F403,F811,F821,F841,E712
 python -m compileall -q netbox_proxbox
 ```
 
-## Django checks (inside NetBox runtime)
+### Django checks (inside NetBox runtime)
 
 ```bash
 python manage.py check
 python manage.py makemigrations --check --dry-run
 ```
 
-## Tests
+### Tests
 
 Current repository state contains no active pytest test modules.
 
 ```bash
 pytest
 # expected: no tests ran
+```
+
+## Publish to PyPI
+
+### Prerequisites
+
+- You must own the `netbox-proxbox` project on PyPI.
+- If the name is unavailable for your account, change `project.name` in `pyproject.toml` to a unique name before publishing.
+- Add `PYPI_API_TOKEN` as a repository secret in GitHub.
+
+### Local preflight
+
+```bash
+python -m build
+twine check dist/*
+```
+
+### Publish via GitHub Actions
+
+- Create a GitHub Release (or run the `Publish Python Package` workflow manually).
+- The workflow builds and uploads distributions to PyPI.
+- After publish:
+
+```bash
+pip install netbox-proxbox
 ```
 
 ## Repository Layout (Relevant Runtime Files)
@@ -183,4 +208,3 @@ The following are kept to avoid accidental runtime regressions, but are not part
 - `netbox_proxbox/websocket_client.py`
 - `netbox_proxbox/views/proxbox_backend.py`
 - `FASTAPI.md` and other legacy backend-oriented docs
-
