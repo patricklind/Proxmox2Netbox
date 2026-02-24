@@ -4,7 +4,6 @@ def get(**kwargs):
     
     owner = "netdevopsbr"
     repo = "netbox-proxbox"
-    #branch = "develop"
     
     # Get variable passed from function
     if kwargs.get("filename"):

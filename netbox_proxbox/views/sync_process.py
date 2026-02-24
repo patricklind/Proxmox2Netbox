@@ -1,7 +1,7 @@
 # NetBox Imports
 from netbox.views import generic
 from utilities.views import register_model_view
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.contrib import messages
 
 # Proxbox Imports
@@ -64,4 +64,3 @@ class SyncProcessDeleteView(generic.ObjectDeleteView):
     Delete a sync process.
     """
     queryset = SyncProcess.objects.all()
-

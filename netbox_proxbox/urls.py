@@ -1,11 +1,9 @@
 from django.urls import include, path
 from utilities.urls import get_model_urls
 
-from netbox_proxbox.websocket_client import websocket_client, WebSocketView
+from netbox_proxbox.websocket_client import WebSocketView
 
-from netbox.views.generic import ObjectChangeLogView
-
-from netbox_proxbox import models, views
+from netbox_proxbox import views
 
 app_name = 'netbox_proxbox'
 

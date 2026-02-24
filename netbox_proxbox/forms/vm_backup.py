@@ -1,6 +1,5 @@
 # Django Imports
 from django import forms
-from django.utils.translation import gettext as _
 
 # NetBox Imports
 from utilities.forms.fields import DynamicModelChoiceField, CommentField

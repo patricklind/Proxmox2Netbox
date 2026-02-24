@@ -1,6 +1,3 @@
-import subprocess
-import json
-
 from django.shortcuts import render
 from django.views import View
 
@@ -10,7 +7,7 @@ except Exception as error:
     print(error)
     
 from netbox_proxbox import github
-from netbox_proxbox.utils import get_fastapi_url
+from netbox_proxbox.utils import get_fastapi_url as get_fastapi_url
 
 # Import other proxbox views
 from .external_pages import *
@@ -22,7 +19,7 @@ from .sync_process import *
 from .sync import *
 from .vm_backup import *
 
-from netbox_proxbox.models import ProxmoxEndpoint, FastAPIEndpoint
+from netbox_proxbox.models import ProxmoxEndpoint
 
 class HomeView(View):
     """
@@ -62,36 +59,6 @@ class HomeView(View):
                 'proxmox_endpoint_list': proxmox_endpoint_obj,
             }
         )
-
-class TestWebSocketView(View):
-    template_name = 'netbox_proxbox/test/websocket.html'
-    
-    def get(self, request):
-        fastapi_endpoint_obj = FastAPIEndpoint.objects.all()
-
-        fastapi_object = fastapi_endpoint_obj[0]
-        fastapi_ip = str(fastapi_object.ip_address).split('/')[0]
-        
-        # Define HTTP(S) URL for FastAPI
-        fastapi_url_https = f"https://{fastapi_ip}:{fastapi_object.port}"
-        fastapi_url_http = f"http://{fastapi_ip}:{fastapi_object.port}"
-        fastapi_url = fastapi_url_https if fastapi_object.verify_ssl else fastapi_url_http
-        
-        # Define (Secure) WebSocket URL for FastAPI
-        fastapi_wss_url = f"wss://{fastapi_ip}:{fastapi_object.port}"
-        fastapi_ws_url = f"ws://{fastapi_ip}:{fastapi_object.port}"
-        fastapi_websocket_url = fastapi_wss_url if fastapi_object.verify_ssl else fastapi_ws_url
-        
-        return render(
-            request,
-            self.template_name,
-            {
-                'fastapi_url': fastapi_url,
-                'fastapi_websocket_url': fastapi_websocket_url
-            }
-        )
-    
-
 
 class NodesView(View):
     template = 'netbox_proxbox/devices.html'

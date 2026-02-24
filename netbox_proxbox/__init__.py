@@ -15,5 +15,3 @@ class ProxboxConfig(PluginConfig):
     required_settings = []
 
 config = ProxboxConfig
-
-#from . import proxbox_api

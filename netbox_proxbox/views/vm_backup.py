@@ -4,16 +4,13 @@ from utilities.views import register_model_view, ViewTab
 from django.shortcuts import render, redirect
 from virtualization.models import VirtualMachine
 
-import requests
-
 from django.contrib import messages
 
 # Proxbox Imports
-from netbox_proxbox.models import VMBackup, FastAPIEndpoint
+from netbox_proxbox.models import VMBackup
 from netbox_proxbox.tables import VMBackupTable
 from netbox_proxbox.filtersets import VMBackupFilterSet
 from netbox_proxbox.forms import VMBackupForm, VMBackupFilterForm
-from netbox_proxbox.utils import get_fastapi_url
 
 import logging
 logger = logging.getLogger(__name__)

@@ -13,7 +13,7 @@ from netbox_proxbox.models import (
     FastAPIEndpoint,
     SyncProcess,
 )
-from netbox_proxbox.tables.vm_backup import VMBackupTable
+from netbox_proxbox.tables.vm_backup import VMBackupTable as VMBackupTable
 
 
 class SyncProcessTable(NetBoxTable):

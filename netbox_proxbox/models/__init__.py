@@ -5,11 +5,10 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.core.exceptions import ValidationError
 
 from netbox.models import NetBoxModel
-from netbox.models.features import JournalingMixin
 
 from netbox_proxbox.fields import DomainField
 from netbox_proxbox.choices import ProxmoxModeChoices, SyncTypeChoices, SyncStatusChoices
-from netbox_proxbox.models.vm_backup import VMBackup
+from netbox_proxbox.models.vm_backup import VMBackup as VMBackup
 
 class CommonProperties:
     @property

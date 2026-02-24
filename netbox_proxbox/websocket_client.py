@@ -1,13 +1,11 @@
 import asyncio
 import websockets
-from asgiref.sync import async_to_sync, sync_to_async
 from netbox_proxbox.views import get_fastapi_url
 from netbox_proxbox.models import FastAPIEndpoint
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 import threading
 from django.views import View
-from django_htmx.http import HttpResponseClientRedirect
 from queue import Queue
 import json
 
@@ -52,7 +50,7 @@ async def websocket_client(uri):
                     print(f'response_dict: {response_dict}')
                     if all([
                         response_dict.get('object') == 'device',  # Checks if 'object' key exists and is 'device'
-                        response_dict.get('end') == True,  # Ensures 'end' key exists and has a truthy value
+                        response_dict.get('end'),  # Ensures 'end' key exists and has a truthy value
                         sync_processes.get('devices') == 'syncing'  # Ensures 'devices' exists and is 'syncing'
                     ]):
                         sync_processes['devices'] = 'not-started'

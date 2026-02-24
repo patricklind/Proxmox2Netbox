@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from netbox.api.serializers import NetBoxModelSerializer
 from netbox.api.fields import ContentTypeField
-from extras.api.serializers import TagSerializer, JournalEntrySerializer
+from extras.api.serializers import TagSerializer
 from ipam.api.serializers import IPAddressSerializer
 from virtualization.api.serializers import VirtualMachineSerializer
 from netbox_proxbox.models import (
@@ -22,8 +22,7 @@ from netbox_proxbox.choices import (
 # Since we are dealing with a serializer related to journal entries, it is likely imported from extras.choices.
 from extras.choices import JournalEntryKindChoices
 
-from extras.models import Tag, JournalEntry
-from virtualization.models import VirtualMachine
+from extras.models import JournalEntry
 from django.contrib.contenttypes.models import ContentType
 
 class VMBackupSerializer(NetBoxModelSerializer):

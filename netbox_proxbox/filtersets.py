@@ -1,4 +1,3 @@
-from django.db.models import Q
 from netbox.filtersets import NetBoxModelFilterSet
 from .models import ProxmoxEndpoint, NetBoxEndpoint, FastAPIEndpoint, SyncProcess, VMBackup
 
@@ -22,7 +21,7 @@ class ProxmoxEndpointFilterSet(NetBoxModelFilterSet):
         fields = ['id', 'name', 'domain', 'ip_address', 'mode']
     
     def search(self, queryset, name, value):
-            return queryset.filter(name__icontains=value)
+        return queryset.filter(name__icontains=value)
 
 
 class NetBoxEndpointFilterSet(NetBoxModelFilterSet):

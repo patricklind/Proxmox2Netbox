@@ -206,10 +206,8 @@ def _ensure_base_objects(mode: str) -> dict[str, Any]:
 def _upsert_cluster(cluster_name: str, cluster_type: ClusterType, tag: Tag) -> Cluster:
     clusters = Cluster.objects.filter(name=cluster_name).order_by("pk")
     cluster = clusters.first()
-    created = False
     if cluster is None:
         cluster = Cluster.objects.create(name=cluster_name, type=cluster_type)
-        created = True
     elif cluster.type_id != cluster_type.id:
         cluster.type = cluster_type
         cluster.save(update_fields=["type"])

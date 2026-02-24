@@ -1,14 +1,10 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.routers import APIRootView
 from netbox.api.viewsets import NetBoxModelViewSet
-from rest_framework import viewsets
 from extras.models import JournalEntry
 from extras.api.serializers import JournalEntrySerializer
 from netbox_proxbox.models import SyncProcess
 from netbox_proxbox.api.serializers import SyncProcessSerializer
 from netbox_proxbox.api.filters import SyncProcessFilterSet
-from netbox_proxbox.filtersets import SyncProcessFilterSet as SyncProcessFilterSetUI
 
 from .. import filtersets, models
 from .serializers import (

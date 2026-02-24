@@ -1,3 +1,5 @@
+import subprocess
+
 from django.views import View
 from django.shortcuts import render, redirect
 
@@ -58,7 +60,6 @@ def run_command(sudo_command):
     
     try:
         user = returnSudoUser()
-        # username = user["user"] # IMPLEMENTATION LEFT.
         password = user["password"]
     except Exception as error:
         print(f"Not able to get sudo user and password from 'configuration.py'\n{error}")
