@@ -1,22 +1,18 @@
-# Deploy FastAPI
+# FastAPI Legacy Notes
 
-Using **[uvicorn](https://www.uvicorn.org/)** to deploy Proxbox backend using **[FastAPI](https://fastapi.tiangolo.com/)** on port **9000** using development mode with --reload.
+This repository includes legacy FastAPI/WebSocket support paths for compatibility.
 
-### It's not ready for PRODUCTION!
+## Important
 
-FastAPI was chosen to replace the current Django Backend, but it's not fully implemented and tested.
+- FastAPI is **not required** for core Proxmox -> NetBox sync in the current plugin runtime.
+- Core sync source of truth is `netbox_proxbox/services/proxmox_sync.py`.
+- FastAPI-related components are retained as optional/legacy behavior and should be considered `needs review` before production use.
 
-```
-cd /opt/netbox/netbox
-uvicorn netbox-proxbox.netbox_proxbox.api.main:app --reload --port 9000
-```
+## When to Use
 
-## Testing FastAPI
+Only use FastAPI-related paths if you explicitly depend on legacy backend-service workflow in your deployment.
 
-Access the following URL **http://HOST:PORT/proxmox/cluster/resources** to view all VMs/Nodes/Storages of your environment.
-Docs: **http://HOST:PORT/docs** or **http://HOST:PORT/redoc**
+## Security/Operations
 
-## Security
-
-The password is not securely stored yet, but I will fix it.
-About the integration, we only use **GET HTTP methods** and we do not modify anything of your environment using **POST / PUT** methods, even though the token allows it or not.
+Treat all legacy FastAPI deployment snippets as non-authoritative unless reviewed for your environment.
+Prefer NetBox-native plugin runtime and queued jobs where possible.
