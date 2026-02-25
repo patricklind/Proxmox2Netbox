@@ -1,4 +1,5 @@
 import logging
+import math
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -8,7 +9,7 @@ from django.utils import timezone
 
 from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site
 from extras.models.tags import Tag, TaggedItem
-from virtualization.models import Cluster, ClusterType, VMInterface, VirtualMachine
+from virtualization.models import Cluster, ClusterType, VirtualDisk, VMInterface, VirtualMachine
 
 from proxmoxer import ProxmoxAPI
 
@@ -236,6 +237,86 @@ def _extract_vm_config_networks(config: dict[str, Any]) -> list[tuple[str, dict[
     return interfaces
 
 
+def _size_token_to_mb(size_token: str | None) -> int | None:
+    if not size_token:
+        return None
+    match = re.match(r"^\s*(\d+(?:\.\d+)?)\s*([kmgtp]?)(?:b)?\s*$", size_token.strip(), re.IGNORECASE)
+    if not match:
+        return None
+
+    value = float(match.group(1))
+    unit = (match.group(2) or "").upper()
+    unit_multipliers = {
+        "": 1,  # Proxmox size values are usually MB when unit is omitted
+        "K": 1 / 1024,
+        "M": 1,
+        "G": 1024,
+        "T": 1024 * 1024,
+        "P": 1024 * 1024 * 1024,
+    }
+    multiplier = unit_multipliers.get(unit)
+    if multiplier is None:
+        return None
+
+    size_mb = int(math.ceil(value * multiplier))
+    return max(size_mb, 1)
+
+
+def _extract_vm_config_disks(config: dict[str, Any]) -> list[dict[str, Any]]:
+    disk_items: list[dict[str, Any]] = []
+    for key, raw_value in config.items():
+        is_qemu_disk = re.match(r"^(scsi|sata|virtio|ide|efidisk)\d+$", key)
+        is_lxc_disk = key == "rootfs" or re.match(r"^mp\d+$", key)
+        if not (is_qemu_disk or is_lxc_disk):
+            continue
+        if not isinstance(raw_value, str):
+            continue
+
+        segments = [segment.strip() for segment in raw_value.split(",") if segment.strip()]
+        if not segments:
+            continue
+
+        source = segments[0]
+        attrs: dict[str, str] = {}
+        for segment in segments[1:]:
+            if "=" not in segment:
+                continue
+            attr_key, attr_value = segment.split("=", 1)
+            attrs[attr_key.strip()] = attr_value.strip()
+
+        if attrs.get("media") == "cdrom":
+            continue
+
+        size_mb = _size_token_to_mb(attrs.get("size"))
+        if size_mb is None:
+            continue
+
+        description = source
+        mountpoint = attrs.get("mp")
+        if mountpoint:
+            description = f"{source} (mount: {mountpoint})"
+        description = description[:200]
+
+        disk_items.append(
+            {
+                "name": key,
+                "size": size_mb,
+                "description": description,
+            }
+        )
+    return disk_items
+
+
+def _fetch_vm_config(client: Any, node_name: str, vm_type: str, vmid: int) -> dict[str, Any] | None:
+    try:
+        if vm_type == "qemu":
+            return client.nodes(node_name).qemu(vmid).config.get()
+        return client.nodes(node_name).lxc(vmid).config.get()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Unable to fetch VM config for %s/%s/%s: %s", node_name, vm_type, vmid, exc)
+        return None
+
+
 def _upsert_vm_interfaces(
     vm: VirtualMachine,
     vm_type: str,
@@ -243,17 +324,14 @@ def _upsert_vm_interfaces(
     node_name: str,
     client: Any,
     tag: Tag,
+    vm_config: dict[str, Any] | None = None,
 ) -> tuple[int, int]:
     created_count = 0
     updated_count = 0
 
-    try:
-        if vm_type == "qemu":
-            vm_config = client.nodes(node_name).qemu(vmid).config.get()
-        else:
-            vm_config = client.nodes(node_name).lxc(vmid).config.get()
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Unable to fetch VM config for %s/%s/%s: %s", node_name, vm_type, vmid, exc)
+    if vm_config is None:
+        vm_config = _fetch_vm_config(client=client, node_name=node_name, vm_type=vm_type, vmid=vmid)
+    if vm_config is None:
         return created_count, updated_count
 
     for default_iface_name, attrs in _extract_vm_config_networks(vm_config):
@@ -280,6 +358,51 @@ def _upsert_vm_interfaces(
         _safe_add_tag(iface, tag)
 
     return created_count, updated_count
+
+
+def _sync_vm_disks(vm: VirtualMachine, vm_config: dict[str, Any], tag: Tag) -> tuple[int, int, int]:
+    created_count = 0
+    updated_count = 0
+    deleted_count = 0
+
+    desired_disks = _extract_vm_config_disks(vm_config)
+    desired_by_name = {disk["name"]: disk for disk in desired_disks}
+
+    for disk_name, disk_data in desired_by_name.items():
+        disk, created = VirtualDisk.objects.get_or_create(
+            virtual_machine=vm,
+            name=disk_name,
+            defaults={
+                "size": disk_data["size"],
+                "description": disk_data["description"],
+            },
+        )
+        if created:
+            created_count += 1
+        else:
+            changed = False
+            if disk.size != disk_data["size"]:
+                disk.size = disk_data["size"]
+                changed = True
+            if disk.description != disk_data["description"]:
+                disk.description = disk_data["description"]
+                changed = True
+            if changed:
+                disk.save(update_fields=["size", "description"])
+                updated_count += 1
+
+        _safe_add_tag(disk, tag)
+
+    stale_qs = (
+        VirtualDisk.objects.filter(virtual_machine=vm, tags=tag)
+        .exclude(name__in=desired_by_name.keys())
+        .order_by("pk")
+    )
+    deleted_count = stale_qs.count()
+    if deleted_count:
+        stale_qs.delete()
+
+    return created_count, updated_count, deleted_count
 
 
 def _upsert_devices_for_session(session: EndpointSession) -> dict[str, int]:
@@ -351,6 +474,9 @@ def _upsert_virtual_machines_for_session(session: EndpointSession) -> dict[str, 
     updated_vm = 0
     created_iface = 0
     updated_iface = 0
+    created_disk = 0
+    updated_disk = 0
+    deleted_disk = 0
 
     for resource in vm_resources:
         vm_type = resource.get("type", "qemu")
@@ -387,6 +513,16 @@ def _upsert_virtual_machines_for_session(session: EndpointSession) -> dict[str, 
         _safe_add_tag(vm, base["tag"])
 
         if node_name and vmid:
+            vm_config = _fetch_vm_config(
+                client=session.client,
+                node_name=node_name,
+                vm_type=vm_type,
+                vmid=vmid,
+            )
+        else:
+            vm_config = None
+
+        if vm_config:
             iface_created, iface_updated = _upsert_vm_interfaces(
                 vm=vm,
                 vm_type=vm_type,
@@ -394,15 +530,28 @@ def _upsert_virtual_machines_for_session(session: EndpointSession) -> dict[str, 
                 node_name=node_name,
                 client=session.client,
                 tag=base["tag"],
+                vm_config=vm_config,
             )
             created_iface += iface_created
             updated_iface += iface_updated
+
+            disk_created, disk_updated, disk_deleted = _sync_vm_disks(
+                vm=vm,
+                vm_config=vm_config,
+                tag=base["tag"],
+            )
+            created_disk += disk_created
+            updated_disk += disk_updated
+            deleted_disk += disk_deleted
 
     return {
         "created_virtual_machines": created_vm,
         "updated_virtual_machines": updated_vm,
         "created_vm_interfaces": created_iface,
         "updated_vm_interfaces": updated_iface,
+        "created_virtual_disks": created_disk,
+        "updated_virtual_disks": updated_disk,
+        "deleted_virtual_disks": deleted_disk,
     }
 
 
@@ -497,5 +646,8 @@ def sync_full_update() -> dict[str, Any]:
         "updated_virtual_machines": vms_result.get("updated_virtual_machines", 0),
         "created_vm_interfaces": vms_result.get("created_vm_interfaces", 0),
         "updated_vm_interfaces": vms_result.get("updated_vm_interfaces", 0),
+        "created_virtual_disks": vms_result.get("created_virtual_disks", 0),
+        "updated_virtual_disks": vms_result.get("updated_virtual_disks", 0),
+        "deleted_virtual_disks": vms_result.get("deleted_virtual_disks", 0),
         "errors": [*devices_result.get("errors", []), *vms_result.get("errors", [])],
     }

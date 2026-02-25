@@ -14,6 +14,9 @@
                     <p>Virtual machines updated: <strong>{{ result.updated_virtual_machines|default:0 }}</strong></p>
                     <p>VM interfaces created: <strong>{{ result.created_vm_interfaces|default:0 }}</strong></p>
                     <p>VM interfaces updated: <strong>{{ result.updated_vm_interfaces|default:0 }}</strong></p>
+                    <p>Virtual disks created: <strong>{{ result.created_virtual_disks|default:0 }}</strong></p>
+                    <p>Virtual disks updated: <strong>{{ result.updated_virtual_disks|default:0 }}</strong></p>
+                    <p>Virtual disks deleted: <strong>{{ result.deleted_virtual_disks|default:0 }}</strong></p>
                     {% if result.runtime_seconds %}
                         <p>Runtime: <strong>{{ result.runtime_seconds|floatformat:2 }}s</strong></p>
                     {% endif %}
