@@ -55,26 +55,7 @@ In NetBox `configuration.py`:
 PLUGINS = ["netbox_proxbox"]
 ```
 
-### 3. Optional `PLUGINS_CONFIG`
-
-No required plugin settings for core sync.
-
-Optional legacy FastAPI/backend-service controls (only used by legacy backend service views):
-
-```python
-PLUGINS_CONFIG = {
-    "netbox_proxbox": {
-        "fastapi": {
-            "sudo": {
-                "user": "",
-                "password": "",
-            }
-        }
-    }
-}
-```
-
-### 4. Run migrations/static
+### 3. Run migrations/static
 
 ```bash
 python manage.py migrate netbox_proxbox
@@ -125,11 +106,6 @@ Behavior note:
 
 - Job class is an orchestrator only.
 - Sync mapping, payloads, and upsert logic remain in `services/proxmox_sync.py`.
-
-## FastAPI / WebSocket Status
-
-FastAPI/WebSocket components are **not required** for core Proxmox -> NetBox sync runtime.
-They are kept for legacy compatibility paths and should be treated as optional unless explicitly needed in your deployment.
 
 ## Development & Validation
 
