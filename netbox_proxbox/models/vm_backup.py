@@ -101,7 +101,8 @@ class VMBackup(NetBoxModel):
         return f"{self.virtual_machine} - {self.creation_time}"
     
     def get_absolute_url(self):
-        return reverse('plugins:netbox_proxbox:vmbackup', args=[self.pk])
+        # Legacy model kept for migration compatibility.
+        return reverse('plugins:netbox_proxbox:home')
 
     
     

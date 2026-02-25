@@ -63,12 +63,3 @@ def sync_full_update(request: HtmxHttpRequest) -> HttpResponse:
         template_name="netbox_proxbox/sync_full_update.html",
         sync_callable=sync_full_update_service,
     )
-
-
-@require_GET
-def sync_vm_backups(request: HtmxHttpRequest) -> HttpResponse:
-    messages.info(
-        request,
-        "VM backup sync is not yet available in out-of-the-box mode. Devices and virtual machines are supported.",
-    )
-    return render(request, "netbox_proxbox/sync_vm_backups.html", {"result": {}})

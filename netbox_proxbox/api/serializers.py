@@ -4,19 +4,13 @@ from netbox.api.serializers import NetBoxModelSerializer
 from netbox.api.fields import ContentTypeField
 from extras.api.serializers import TagSerializer
 from ipam.api.serializers import IPAddressSerializer
-from virtualization.api.serializers import VirtualMachineSerializer
 from netbox_proxbox.models import (
     ProxmoxEndpoint,
-    NetBoxEndpoint,
-    FastAPIEndpoint,
     SyncProcess,
-    VMBackup
 )
 from netbox_proxbox.choices import (
     SyncTypeChoices,
     SyncStatusChoices,
-    ProxmoxBackupSubtypeChoices,
-    ProxmoxBackupFormatChoices
 )
 # JournalEntryKindChoices is typically defined in the choices module of the NetBox codebase.
 # Since we are dealing with a serializer related to journal entries, it is likely imported from extras.choices.
@@ -24,24 +18,6 @@ from extras.choices import JournalEntryKindChoices
 
 from extras.models import JournalEntry
 from django.contrib.contenttypes.models import ContentType
-
-class VMBackupSerializer(NetBoxModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='plugins-api:netbox_proxbox-api:vmbackup-detail',
-    )
-    virtual_machine = VirtualMachineSerializer(nested=True)
-    subtype = serializers.ChoiceField(choices=ProxmoxBackupSubtypeChoices)
-    format = serializers.ChoiceField(choices=ProxmoxBackupFormatChoices)
-    tags = TagSerializer(many=True, required=False, nested=True)
-    
-    class Meta:
-        model = VMBackup
-        fields = (
-            'id', 'url', 'display', 'virtual_machine', 'subtype', 'format', 'creation_time', 'size', 'used', 'encrypted',
-            'verification_state', 'verification_upid', 'volume_id', 'vmid', 'storage',
-            'tags', 'custom_fields', 'created', 'last_updated',
-        )
-    
 
 class SyncProcessSerializer(NetBoxModelSerializer):
     """
@@ -135,54 +111,6 @@ class ProxmoxEndpointSerializer(NetBoxModelSerializer):
                 )
 
         return attrs
-
-
-class NetBoxEndpointSerializer(NetBoxModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='plugins-api:netbox_proxbox-api:endpoints:netbox-endpoint-detail',
-    )
-    ip_address = IPAddressSerializer(nested=True, required=False, allow_null=True)
-    
-    class Meta:
-        model = NetBoxEndpoint
-        fields = (
-            'id', 'url', 'display', 'name', 'ip_address', 'port',
-            'token', 'verify_ssl', 'tags', 'custom_fields',
-            'created', 'last_updated',
-        )
-    
-    
-    def create(self, validated_data):
-        """
-        Check if a NetBoxEndpoint already exists. If it does, return the existing one.
-        Otherwise, create a new one.
-        """
-        if NetBoxEndpoint.objects.exists():
-            return NetBoxEndpoint.objects.first()
-        return super().create(validated_data)
-    
-
-class FastAPIEndpointSerializer(NetBoxModelSerializer):
-    url = serializers.HyperlinkedIdentityField(
-        view_name='plugins-api:netbox_proxbox-api:endpoints:fastapi-endpoint-detail',
-    )
-    ip_address = IPAddressSerializer(nested=True, required=False, allow_null=True)
-    
-    class Meta:
-        model = FastAPIEndpoint
-        fields = (
-            'id', 'url', 'display', 'name', 'ip_address', 'port',
-            'verify_ssl', 'tags', 'custom_fields', 'created', 'last_updated',
-        )
-
-    def create(self, validated_data):
-        """
-        Check if a FastAPIEndpoint already exists. If it does, return the existing one.
-        Otherwise, create a new one.
-        """
-        if FastAPIEndpoint.objects.exists():
-            return FastAPIEndpoint.objects.first()
-        return super().create(validated_data)
 
 class JournalEntrySerializer(NetBoxModelSerializer):
     """

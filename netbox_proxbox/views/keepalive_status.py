@@ -28,9 +28,5 @@ def get_service_status(
             status = "success" if connected else "error"
         except ProxmoxEndpoint.DoesNotExist:
             status = "error"
-    elif service in {"netbox", "fastapi"}:
-        # Kept for backward-compatible templates. These services are not required
-        # in out-of-the-box mode, so we mark them healthy.
-        status = "success"
 
     return render(request, template_name, {"status": status})

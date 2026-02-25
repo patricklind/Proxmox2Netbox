@@ -1,106 +1,47 @@
 # Installing the Plugin using Git
 
-## TL'DR (For Experienced Users)
-
-### Enable plugin in configuration.py (usually on /opt/netbox/netbox/netbox)
-
-```
-PLUGINS = ['netbox_proxbox']
-```
-
-### Run the commands
+## 1. Clone repository
 
 ```bash
-# Clone the repository
-cd /opt/netbox/netbox/netbox
-
-git clone https://github.com/patricklind/Proxmox2NetBox.git
-
-# Enter the plugin directory
-cd Proxmox2NetBox
-
-# Activate virtual environment
-source /opt/netbox/venv/bin/activate
-
-# Install plugin
-pip install .
-
-# Run migrations
-cd /opt/netbox/netbox/
-python3 manage.py migrate netbox_proxbox
-python3 manage.py collectstatic --no-input
-
-# Restart service
-sudo systemctl restart netbox
-```
-
-> **Note:** You'll still need to set up the backend. See [Backend Setup Guide](../installation/backend-setup.md) for details.
-
----
-
-Follow the steps below to install the Proxmox2NetBox plugin using Git.
-
-## Step 1: Clone the Repository
-
-Navigate to the Netbox directory and clone the Proxmox2NetBox plugin repository:
-
-```
 cd /opt/netbox/netbox/netbox
 git clone https://github.com/patricklind/Proxmox2NetBox.git
-```
-
-## Step 2: Enter the Plugin Directory
-
-Change into the plugin directory:
-
-```
 cd Proxmox2NetBox
 ```
 
-## Step 3: Enter Netbox's Virtual Environment
+## 2. Activate NetBox virtual environment
 
-Activate the virtual environment for Netbox:
-
-```
+```bash
 source /opt/netbox/venv/bin/activate
 ```
 
-## Step 4: Install the Plugin
+## 3. Install plugin package
 
-Install the plugin using the cloned repository:
-
-```
+```bash
 pip install .
 ```
 
-## Step 5: Enable the Plugin
+## 4. Enable plugin
 
-Add the plugin to your Netbox configuration. Edit `/opt/netbox/netbox/netbox/configuration.py` and add the following line:
+Edit `/opt/netbox/netbox/netbox/configuration.py`:
 
 ```python
 PLUGINS = ['netbox_proxbox']
 ```
 
-## Step 6: Run Database Migrations
+## 5. Run migrations and collect static files
 
-Run the following commands to apply the necessary database migrations:
-
-```
+```bash
 cd /opt/netbox/netbox/
 python3 manage.py migrate netbox_proxbox
 python3 manage.py collectstatic --no-input
 ```
 
-## Step 7: Restart the Netbox Service
+## 6. Restart NetBox
 
-Finally, restart the Netbox service to load the new plugin:
-
-```
+```bash
 sudo systemctl restart netbox
 ```
 
-## Next Steps
+## 7. Configure Proxmox endpoint and run sync
 
-After completing the plugin installation, you'll need to set up the Proxmox2NetBox backend. Please refer to the [Backend Setup Guide](../installation/backend-setup.md) for detailed instructions.
-
-For more information about using the plugin, please refer to the [Usage Guide](../usage.md).
+Use plugin UI to configure credentials and run sync operations.

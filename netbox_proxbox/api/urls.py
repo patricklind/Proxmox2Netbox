@@ -8,15 +8,12 @@ app_name = 'proxmox2netbox'
 endpoints_router = NetBoxRouter()
 endpoints_router.APIRootView = views.Proxmox2NetBoxEndpointsView
 endpoints_router.register('proxmox', views.ProxmoxEndpointViewSet, basename='proxmox-endpoint')
-endpoints_router.register('netbox', views.NetBoxEndpointViewSet, basename='netbox-endpoint')
-endpoints_router.register('fastapi', views.FastAPIEndpointViewSet, basename='fastapi-endpoint')
 
 # Create main router
 router = NetBoxRouter()
 router.APIRootView = views.Proxmox2NetBoxRootView
 
 router.register('sync-processes', views.SyncProcessViewSet)
-router.register('backups', views.VMBackupViewSet)
 router.register('journal-entries', views.JournalEntryViewSet)
 
 urlpatterns = [

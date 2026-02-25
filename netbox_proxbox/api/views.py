@@ -1,17 +1,14 @@
 from rest_framework.routers import APIRootView
 from netbox.api.viewsets import NetBoxModelViewSet
 from extras.models import JournalEntry
-from extras.api.serializers import JournalEntrySerializer
 from netbox_proxbox.models import SyncProcess
 from netbox_proxbox.api.serializers import SyncProcessSerializer
 from netbox_proxbox.api.filters import SyncProcessFilterSet
 
-from .. import filtersets, models
+from .. import models
 from .serializers import (
+    JournalEntrySerializer,
     ProxmoxEndpointSerializer,
-    NetBoxEndpointSerializer,
-    FastAPIEndpointSerializer,
-    VMBackupSerializer
 )
 
 class Proxmox2NetBoxRootView(APIRootView):
@@ -37,11 +34,6 @@ class Proxmox2NetBoxEndpointsView(APIRootView):
     def get_view_name(self):
         return "Endpoints"
 
-class VMBackupViewSet(NetBoxModelViewSet):
-    queryset = models.VMBackup.objects.all()
-    serializer_class = VMBackupSerializer
-    filterset_class = filtersets.VMBackupFilterSet
-
 class SyncProcessViewSet(NetBoxModelViewSet):
     queryset = SyncProcess.objects.all()
     serializer_class = SyncProcessSerializer
@@ -50,15 +42,6 @@ class SyncProcessViewSet(NetBoxModelViewSet):
 class ProxmoxEndpointViewSet(NetBoxModelViewSet):
     queryset = models.ProxmoxEndpoint.objects.all()
     serializer_class = ProxmoxEndpointSerializer
-
-class NetBoxEndpointViewSet(NetBoxModelViewSet):
-    queryset = models.NetBoxEndpoint.objects.all()
-    serializer_class = NetBoxEndpointSerializer
-
-
-class FastAPIEndpointViewSet(NetBoxModelViewSet):
-    queryset = models.FastAPIEndpoint.objects.all()
-    serializer_class = FastAPIEndpointSerializer
 
 class JournalEntryViewSet(NetBoxModelViewSet):
     """

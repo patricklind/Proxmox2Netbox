@@ -47,7 +47,7 @@ class SyncProcessAddView(generic.ObjectView):
     queryset = SyncProcess.objects.none()  # Empty queryset since we don't need any objects
     
     def get(self, request):
-        messages.error(request, "Adding sync processes through the UI is not supported. Sync processes can only be created through the plugin backend.")
+        messages.error(request, "Adding sync processes through the UI is not supported. Run sync from the plugin home page or NetBox job queue.")
         return redirect('plugins:netbox_proxbox:syncprocess_list')
 
 @register_model_view(SyncProcess, 'edit')

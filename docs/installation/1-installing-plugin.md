@@ -1,84 +1,43 @@
 # Installing the Plugin using pip
 
-## TL'DR (For Experienced Users)
-
-### Enable plugin in configuration.py (usually on /opt/netbox/netbox/netbox)
-
-```
-PLUGINS = ['netbox_proxbox']
-```
-
-### Run the commands
+## 1. Activate NetBox virtual environment
 
 ```bash
-# Activate virtual environment
-source /opt/netbox/venv/bin/activate
-
-# Install plugin
-pip install proxmox2netbox
-
-# Enable plugin in configuration.py (usually on /opt/netbox/netbox/netbox)
-PLUGINS = ['netbox_proxbox']
-
-# Run migrations
-cd /opt/netbox/netbox/
-python3 manage.py migrate netbox_proxbox
-python3 manage.py collectstatic --no-input
-
-# Restart service
-sudo systemctl restart netbox
-```
-
-> **Note:** You'll still need to set up the backend. See [Backend Setup Guide](../installation/backend-setup.md) for details.
-
----
-
-Follow the steps below to install the Proxmox2NetBox plugin using pip.
-
-## Step 1: Enter Netbox's virtual environment
-
-First, you need to activate the virtual environment for Netbox. Run the following command:
-
-```
 source /opt/netbox/venv/bin/activate
 ```
 
-## Step 2: Install the plugin package
+## 2. Install package
 
-Install the latest beta version of the Proxmox2NetBox plugin:
-
-```
+```bash
 pip install proxmox2netbox
 ```
 
-## Step 3: Enable the plugin
+## 3. Enable plugin
 
-Add the plugin to your Netbox configuration. Edit `/opt/netbox/netbox/netbox/configuration.py` and add the following line:
+Edit `/opt/netbox/netbox/netbox/configuration.py`:
 
 ```python
 PLUGINS = ['netbox_proxbox']
 ```
 
-## Step 4: Run database migrations
+## 4. Run migrations and collect static files
 
-Run the following commands to apply the necessary database migrations:
-
-```
+```bash
 cd /opt/netbox/netbox/
 python3 manage.py migrate netbox_proxbox
 python3 manage.py collectstatic --no-input
 ```
 
-## Step 5: Restart the Netbox service
+## 5. Restart NetBox
 
-Finally, restart the Netbox service to load the new plugin:
-
-```
+```bash
 sudo systemctl restart netbox
 ```
 
-## Next Steps
+## 6. Configure Proxmox endpoint and run sync
 
-After completing the plugin installation, you'll need to set up the Proxmox2NetBox backend. Please refer to the [Backend Setup Guide](../installation/backend-setup.md) for detailed instructions.
+In NetBox UI:
 
-For more information about using the plugin, please refer to the [Usage Guide](../usage.md).
+- `Plugins -> Proxmox2NetBox -> Endpoints -> Proxmox Endpoints`
+- Create endpoint with username and either password or API token.
+- Run `Sync Nodes`, `Sync Virtual Machines`, or `Full Update Sync` from plugin home.

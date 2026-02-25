@@ -9,7 +9,6 @@ authors = [
 license = "Apache-2.0"
 requires-python = ">=3.8"
 dependencies = [
-    "websockets>=13.1",
     "proxmoxer>=2.2.0",
 ]
 
@@ -47,7 +46,6 @@ include = [
     "/netbox_proxbox",
     "/README.md",
     "/CONTRIBUTING.md",
-    "/FASTAPI.md",
     "/LICENSE",
     "/MANIFEST.in",
     "/pyproject.toml",

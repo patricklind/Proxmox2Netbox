@@ -179,10 +179,7 @@ netbox_proxbox/
   tables/
 ```
 
-## Legacy/Needs-Review Areas
+## Scope
 
-The following are kept to avoid accidental runtime regressions, but are not part of core sync runtime:
-
-- `netbox_proxbox/websocket_client.py`
-- `netbox_proxbox/views/proxbox_backend.py`
-- `FASTAPI.md` and other legacy backend-oriented docs
+This repository ships a NetBox plugin runtime only.  
+Legacy FastAPI/backend-service components are removed from runtime, docs, and packaging scope.

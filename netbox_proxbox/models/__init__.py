@@ -188,7 +188,8 @@ class NetBoxEndpoint(NetBoxModel, CommonProperties):
         return f"{self.name} ({self.ip_address})"
 
     def get_absolute_url(self):
-        return reverse("plugins:netbox_proxbox:netboxendpoint", args=[self.pk])
+        # Legacy model kept for migration compatibility.
+        return reverse("plugins:netbox_proxbox:home")
 
 
 class FastAPIEndpoint(NetBoxModel, CommonProperties):
@@ -272,7 +273,8 @@ class FastAPIEndpoint(NetBoxModel, CommonProperties):
         return f"{self.name} ({self.domain})"
 
     def get_absolute_url(self):
-        return reverse("plugins:netbox_proxbox:fastapiendpoint", args=[self.pk])
+        # Legacy model kept for migration compatibility.
+        return reverse("plugins:netbox_proxbox:home")
 
 
 class SyncProcess(NetBoxModel):

@@ -9,11 +9,8 @@ from netbox.tables.columns import BooleanColumn
 # Proxmox2NetBox Imports
 from netbox_proxbox.models import (
     ProxmoxEndpoint,
-    NetBoxEndpoint,
-    FastAPIEndpoint,
     SyncProcess,
 )
-from netbox_proxbox.tables.vm_backup import VMBackupTable as VMBackupTable
 
 
 class SyncProcessTable(NetBoxTable):
@@ -67,38 +64,4 @@ class ProxmoxEndpointTable(NetBoxTable):
         default_columns = (
             'pk', 'name', 'domain', 'ip_address', 'port', 'mode',
             'version', 'verify_ssl'
-        )
-
-
-class NetBoxEndpointTable(NetBoxTable):
-    name = tables.Column(linkify=True)
-    ip_address = tables.Column(linkify=True)
-    verify_ssl = BooleanColumn()
-    token = tables.Column(linkify=True)
-    class Meta(NetBoxTable.Meta):
-        model = NetBoxEndpoint
-        fields = (
-            'pk', 'id', 'name', 'ip_address', 'port',
-            'verify_ssl', 'token', 'actions',
-        )
-        
-        default_columns = (
-            'pk', 'name', 'ip_address', 'port', 'verify_ssl', 'token'
-        )
-
-
-class FastAPIEndpointTable(NetBoxTable):
-    name = tables.Column(linkify=True)
-    ip_address = tables.Column(linkify=True)
-    verify_ssl = BooleanColumn()
-    
-    class Meta(NetBoxTable.Meta):
-        model = FastAPIEndpoint
-        fields = (
-            'pk', 'id', 'name', 'domain', 'ip_address', 'port',
-            'verify_ssl', 'use_websocket', 'websocket_domain', 'websocket_port', 'server_side_websocket', 'token', 'actions',
-        )
-        
-        default_columns = (
-            'pk', 'name', 'domain', 'ip_address', 'port', 'verify_ssl', 'use_websocket', 'websocket_domain'
         )

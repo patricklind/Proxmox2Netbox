@@ -19,15 +19,6 @@ from .sync_process import (
     SyncProcessListView,
     SyncProcessView,
 )
-from .vm_backup import (
-    VMBackupAddView,
-    VMBackupBulkDeleteView,
-    VMBackupDeleteView,
-    VMBackupEditView,
-    VMBackupListView,
-    VMBackupTabView,
-    VMBackupView,
-)
 
 from netbox_proxbox.models import ProxmoxEndpoint
 
@@ -43,13 +34,6 @@ __all__ = (
     "SyncProcessEditView",
     "SyncProcessListView",
     "SyncProcessView",
-    "VMBackupAddView",
-    "VMBackupBulkDeleteView",
-    "VMBackupDeleteView",
-    "VMBackupEditView",
-    "VMBackupListView",
-    "VMBackupTabView",
-    "VMBackupView",
     "get_proxmox_card",
     "get_service_status",
     "sync_devices",
@@ -67,9 +51,7 @@ class HomeView(View):
     ### Methods:
     - **get(request):**
             Handles GET requests to the view.
-            Retrieves plugin configuration and default settings.
-            Constructs the FastAPI endpoint URL.
-            Renders the template with the configuration and default settings.
+            Renders Proxmox endpoint overview for out-of-the-box sync.
             
             **Args:**
             - **request (HttpRequest):** The HTTP request object.
