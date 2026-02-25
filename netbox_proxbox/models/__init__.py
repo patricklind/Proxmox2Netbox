@@ -172,7 +172,7 @@ class NetBoxEndpoint(NetBoxModel, CommonProperties):
         verbose_name=_('API Token'),
         null=True,
         blank=True,
-        help_text=_('API Token for the NetBox API. Needed for Proxbox Backend Service to communicate with NetBox.'),
+        help_text=_('API Token for the NetBox API. Needed for Proxmox2NetBox Backend Service to communicate with NetBox.'),
     )
     verify_ssl = models.BooleanField(
         default=True,
@@ -193,11 +193,11 @@ class NetBoxEndpoint(NetBoxModel, CommonProperties):
 
 class FastAPIEndpoint(NetBoxModel, CommonProperties):
     name = models.CharField(
-        default='ProxBox Endpoint',
+        default='Proxmox2NetBox Endpoint',
         max_length=255,
         blank=True,
         null=True,
-        help_text=_('Name of the ProxBox Endpoint.'),
+        help_text=_('Name of the Proxmox2NetBox Endpoint.'),
     )
     ip_address = models.ForeignKey(
         to='ipam.IPAddress',
@@ -206,12 +206,12 @@ class FastAPIEndpoint(NetBoxModel, CommonProperties):
         verbose_name=_('IP Address'),
         null=True,
         blank=True,
-        help_text=_('IP Address of the Proxbox API (Backend Service). Fallback if domain name is not provided.'),
+        help_text=_('IP Address of the Proxmox2NetBox API (Backend Service). Fallback if domain name is not provided.'),
     )
     domain = DomainField(
         default='localhost',
         verbose_name=_('Domain'),
-        help_text=_('Domain name of the Proxbox API (Backend Service). Default is "localhost".'),
+        help_text=_('Domain name of the Proxmox2NetBox API (Backend Service). Default is "localhost".'),
     )
     port = models.PositiveIntegerField(
         default=8800,
@@ -221,37 +221,37 @@ class FastAPIEndpoint(NetBoxModel, CommonProperties):
     verify_ssl = models.BooleanField(
         default=True,
         verbose_name=_('Verify SSL'),
-        help_text=_('Choose or not to verify SSL certificate of the Proxbox Endpoint'),
+        help_text=_('Choose or not to verify SSL certificate of the Proxmox2NetBox Endpoint'),
     )
     token = models.CharField(
         blank=True,
         null=True,
         max_length=255,
         verbose_name=_('Token'),
-        help_text=_('Token for the Proxbox Endpoint. If not provided, the Proxbox Endpoint will not be able to send messages to the client (user) browser.'),
+        help_text=_('Token for the Proxmox2NetBox Endpoint. If not provided, the Proxmox2NetBox Endpoint will not be able to send messages to the client (user) browser.'),
     )
     use_websocket = models.BooleanField(
         default=False,
         verbose_name=_('Use WebSocket'),
-        help_text=_('Choose or not to use WebSocket for the Proxbox Endpoint. If enabled, the Proxbox Endpoint will use WebSocket connection to send messages to the client (user) browser.'),
+        help_text=_('Choose or not to use WebSocket for the Proxmox2NetBox Endpoint. If enabled, the Proxmox2NetBox Endpoint will use WebSocket connection to send messages to the client (user) browser.'),
     )
     websocket_domain = models.CharField(
         max_length=255,
         blank=True,
         null=True,
         verbose_name=_('WebSocket Domain'),
-        help_text=_('Domain name of the WebSocket for the Proxbox Endpoint'),
+        help_text=_('Domain name of the WebSocket for the Proxmox2NetBox Endpoint'),
     )
     websocket_port = models.PositiveIntegerField(
         default=8800,
         validators=[MinValueValidator(1), MaxValueValidator(65535)],
         verbose_name=_('WebSocket Port'),
-        help_text=_('Port of the WebSocket for the Proxbox Endpoint (the same as HTTP port)'),
+        help_text=_('Port of the WebSocket for the Proxmox2NetBox Endpoint (the same as HTTP port)'),
     )
     server_side_websocket = models.BooleanField(
         default=False,
         verbose_name=_('[BETA] Server Side WebSocket'),
-        help_text=_('Choose or not to use server side WebSocket connection for the Proxbox Endpoint. This is experimental feature and may not work as expected. This way, client (user) browser will not be able to send messages to the Proxbox Endpoint.'),
+        help_text=_('Choose or not to use server side WebSocket connection for the Proxmox2NetBox Endpoint. This is experimental feature and may not work as expected. This way, client (user) browser will not be able to send messages to the Proxmox2NetBox Endpoint.'),
     )
 
     class Meta:
@@ -260,7 +260,7 @@ class FastAPIEndpoint(NetBoxModel, CommonProperties):
     
     @property
     def websocket_url(self) -> str:
-        """Construct the full URL for the Proxbox endpoint."""
+        """Construct the full URL for the Proxmox2NetBox endpoint."""
         try:
             protocol = 'wss' if self.verify_ssl else 'ws'
             host = self.domain if self.domain else self.ip

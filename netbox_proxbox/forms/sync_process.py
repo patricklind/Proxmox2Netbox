@@ -5,7 +5,7 @@ from django.utils.translation import gettext as _
 from utilities.forms.fields import CommentField
 from netbox.forms import NetBoxModelForm, NetBoxModelFilterSetForm
 
-# Proxbox Imports
+# Proxmox2NetBox Imports
 from ..models import SyncProcess
 from ..choices import SyncTypeChoices, SyncStatusChoices
 

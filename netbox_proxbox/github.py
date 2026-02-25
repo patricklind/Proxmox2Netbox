@@ -2,8 +2,8 @@ import requests
 
 def get(**kwargs):
     
-    owner = "netdevopsbr"
-    repo = "netbox-proxbox"
+    owner = "patricklind"
+    repo = "Proxmox2Netbox"
     
     # Get variable passed from function
     if kwargs.get("filename"):

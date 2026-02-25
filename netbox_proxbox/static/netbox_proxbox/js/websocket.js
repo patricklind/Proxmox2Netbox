@@ -276,14 +276,14 @@ ws.onerror = function(error) {
     let errorMessage = `
         <p align=center>
             <strong>WebSocket</strong> communication failed with <strong>${error.currentTarget.url}</strong>
-            <br>The most probably cause is <strong>Proxbox Backend not running</strong> properly.<br><br>
-            Check if Proxbox is running using following command: <code>systemctl status proxbox</code>.<br>If not, just issue the <code>systemctl start proxbox</code> command..<br>Otherwise, check <a href="https://github.com/netdevopsbr/netbox-proxbox#15-systemd-setup-proxbox-backend" target="_target">Proxbox Documentation</a>.
+            <br>The most probably cause is <strong>Proxmox2NetBox Backend not running</strong> properly.<br><br>
+            Check if Proxmox2NetBox is running using following command: <code>systemctl status proxmox2netbox</code>.<br>If not, just issue the <code>systemctl start proxmox2netbox</code> command..<br>Otherwise, check <a href="https://github.com/patricklind/Proxmox2Netbox#systemd-setup-backend-service" target="_target">Proxmox2NetBox Documentation</a>.
         </p>`
 
     let errorButtonFix = `
-        <a href="{% url 'plugins:netbox_proxbox:fix-proxbox-backend' %}">
+        <a href="{% url 'plugins:netbox_proxbox:fix-proxmox2netbox-backend' %}">
             <button class="btn btn-primary m-2" id="error-button-fix" class="btn btn-primary">
-                Let Proxbox try to fix it.
+                Let Proxmox2NetBox try to fix it.
             </button>
         </a><hr>
     `

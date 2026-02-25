@@ -6,7 +6,7 @@ from utilities.forms.fields import DynamicModelChoiceField, CommentField
 from netbox.forms import NetBoxModelForm, NetBoxModelFilterSetForm
 from ipam.models import IPAddress
 
-# Proxbox Imports
+# Proxmox2NetBox Imports
 from ..models import FastAPIEndpoint
 
 
@@ -24,27 +24,27 @@ class FastAPIEndpointForm(NetBoxModelForm):
     )
     token = forms.CharField(
         required=False,
-        help_text='This will only be working from v0.0.7 and above. Token for the Proxbox Endpoint. If not provided, the Proxbox Endpoint will not be able to send messages to the client (user) browser.',
-        label='[BETA] Proxbox Backend Token'
+        help_text='This will only be working from v0.0.7 and above. Token for the Proxmox2NetBox Endpoint. If not provided, the Proxmox2NetBox Endpoint will not be able to send messages to the client (user) browser.',
+        label='[BETA] Proxmox2NetBox Backend Token'
     )
     use_websocket = forms.BooleanField(
         required=False,
-        help_text='Choose or not to use WebSocket for the Proxbox Endpoint. If enabled, the Proxbox Endpoint will use WebSocket connection to send messages to the client (user) browser.',
+        help_text='Choose or not to use WebSocket for the Proxmox2NetBox Endpoint. If enabled, the Proxmox2NetBox Endpoint will use WebSocket connection to send messages to the client (user) browser.',
         label='Use WebSocket'
     )
     websocket_domain = forms.CharField(
         required=False,
-        help_text='Domain name of the WebSocket for the Proxbox Endpoint. The client (user) browser will connect to this domain to receive messages from the Proxbox Endpoint.',
+        help_text='Domain name of the WebSocket for the Proxmox2NetBox Endpoint. The client (user) browser will connect to this domain to receive messages from the Proxmox2NetBox Endpoint.',
         label='WebSocket Domain'
     )
     websocket_port = forms.IntegerField(
         required=False,
-        help_text='Port of the WebSocket for the Proxbox Endpoint (the same as HTTP port)',
+        help_text='Port of the WebSocket for the Proxmox2NetBox Endpoint (the same as HTTP port)',
         label='WebSocket Port'
     )
     server_side_websocket = forms.BooleanField(
         required=False,
-        help_text='Choose or not to use server side WebSocket connection for the Proxbox Endpoint. This is experimental feature and may not work as expected. This way, client will not need to connect to the Proxbox Endpoint. Avoiding firewall rules to protect the Proxbox Endpoint.',
+        help_text='Choose or not to use server side WebSocket connection for the Proxmox2NetBox Endpoint. This is experimental feature and may not work as expected. This way, client will not need to connect to the Proxmox2NetBox Endpoint. Avoiding firewall rules to protect the Proxmox2NetBox Endpoint.',
         label='[BETA] Server Side WebSocket'
     )
     

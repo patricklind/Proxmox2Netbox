@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from netbox.tables import NetBoxTable, ChoiceFieldColumn
 from netbox.tables.columns import BooleanColumn
 
-# Proxbox Imports
+# Proxmox2NetBox Imports
 from netbox_proxbox.models import VMBackup
 
 

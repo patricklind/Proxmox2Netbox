@@ -7,13 +7,13 @@ The Proxmox2NetBox backend is required for the plugin to function. This guide co
 The simplest way to install the backend is using Docker:
 
 ```
-docker pull emersonfelipesp/proxbox-api:latest
-docker run -d -p 8800:8800 --name proxbox-api emersonfelipesp/proxbox-api:latest
+docker pull emersonfelipesp/proxmox2netbox-api:latest
+docker run -d -p 8800:8800 --name proxmox2netbox-api emersonfelipesp/proxmox2netbox-api:latest
 ```
 
 ## Option 2: Manual Installation
 
-If Docker is not an option, you can install the backend manually. For detailed instructions, please refer to the [Proxmox2NetBox API documentation](https://github.com/patricklind/Proxmox2Netbox/blob/develop/proxbox_api/README.md).
+If Docker is not an option, you can install the backend manually. For detailed instructions, please refer to the [Proxmox2NetBox API documentation](https://github.com/patricklind/Proxmox2NetBox/blob/develop/proxbox_api/README.md).
 
 ## SSL Configuration
 
@@ -36,13 +36,13 @@ sudo cp -v /opt/netbox/netbox/proxmox2netbox/contrib/*.service /etc/systemd/syst
 2. Reload systemd and enable the service:
 ```
 sudo systemctl daemon-reload
-sudo systemctl enable --now proxbox
+sudo systemctl enable --now proxmox2netbox
 ```
 
 3. Start and verify the service:
 ```
-sudo systemctl start proxbox
-sudo systemctl status proxbox
+sudo systemctl start proxmox2netbox
+sudo systemctl status proxmox2netbox
 ```
 
 ## Development Setup
@@ -59,8 +59,8 @@ If you need to test the plugin without reusing Netbox certificates, you can crea
 
 ```
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
--keyout /etc/ssl/proxbox.key \
--out /etc/ssl/proxbox.crt
+-keyout /etc/ssl/proxmox2netbox.key \
+-out /etc/ssl/proxmox2netbox.crt
 ```
 
 > **Note:** The certificate files are created in `/etc/ssl` by default. You'll need to update the systemd service file to use these certificates. Consider using an HTTP proxy like NGINX to serve the FastAPI application.

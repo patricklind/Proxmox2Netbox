@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from netbox.views import generic
 from utilities.views import register_model_view
 
-# ProxBox Imports
+# Proxmox2NetBox Imports
 from netbox_proxbox.models import FastAPIEndpoint
 from netbox_proxbox.tables import FastAPIEndpointTable
 from netbox_proxbox.filtersets import FastAPIEndpointFilterSet

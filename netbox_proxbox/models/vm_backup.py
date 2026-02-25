@@ -6,7 +6,7 @@ from django.urls import reverse
 # NetBox Imports
 from netbox.models import NetBoxModel
 
-# NetBox ProxBox Imports
+# NetBox Proxmox2NetBox Imports
 from netbox_proxbox.choices import ProxmoxBackupSubtypeChoices, ProxmoxBackupFormatChoices
 
 class VMBackup(NetBoxModel):

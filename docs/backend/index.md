@@ -4,4 +4,4 @@ The backend made using the FastAPI framework connects with both Netbox and Proxm
 
 ### Proxmox2NetBox Architecture
 
-![Proxmox2NetBox Architecure Image](./proxbox-architecture.png)
+![Proxmox2NetBox Architecure Image](./proxmox2netbox-architecture.png)

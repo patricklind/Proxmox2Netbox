@@ -10,10 +10,10 @@
         {% endfor %}
     </div> 
     {% else %}
-        <div>Not able to get <strong>Proxbox Backend Service Status</strong></div>
+        <div>Not able to get <strong>Proxmox2NetBox Backend Service Status</strong></div>
     {% endif %}
     <br>
     <a href="{% url 'plugins:netbox_proxbox:home' %}">
-        <button class="btn btn-primary">Return to Proxbox Homepage</button>
+        <button class="btn btn-primary">Return to Proxmox2NetBox Homepage</button>
     </a>
 {% endblock %}

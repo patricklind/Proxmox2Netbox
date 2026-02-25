@@ -215,7 +215,7 @@ class JournalEntrySerializer(NetBoxModelSerializer):
     Example JSON:
         {
             "id": 1,
-            "url": "/api/plugins/proxbox/journal-entries/1/",
+            "url": "/api/plugins/proxmox2netbox/journal-entries/1/",
             "display": "Info: Sync process started",
             "object_type": "netbox_proxbox.syncprocess",
             "object_id": 1,

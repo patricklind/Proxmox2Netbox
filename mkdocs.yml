@@ -1,9 +1,9 @@
 site_name: Proxmox2NetBox Docs
 site_dir: ./site
-site_url: https://proxbox.netbox.dev.br/
+site_url: https://proxmox2netbox.netbox.dev.br/
 docs_dir: ./docs
-repo_name: patricklind/Proxmox2Netbox
-repo_url: https://github.com/patricklind/Proxmox2Netbox
+repo_name: patricklind/Proxmox2NetBox
+repo_url: https://github.com/patricklind/Proxmox2NetBox
 theme:
   name: material
   custom_dir: docs/_theme/
@@ -83,7 +83,7 @@ nav:
   #   - Background Jobs: 'features/background-jobs.md'
   #   - API & Integration: 'features/api-integration.md'
   # - Configuration:
-  #     - Configuring ProxBox: 'configuration/index.md'
+  #     - Configuring Proxmox2NetBox: 'configuration/index.md'
   #     - Required Parameters: 'configuration/required-parameters.md'
   # - Data Model:
   #   - Virtual Machine (VM): 'models/virtual-machine.md'

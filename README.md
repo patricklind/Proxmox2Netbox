@@ -35,7 +35,7 @@ Primary runtime entrypoints:
 - UI endpoints: `netbox_proxbox/views/sync.py`
 - Connection/status badge: `netbox_proxbox/views/keepalive_status.py`
 - Proxmox card data: `netbox_proxbox/views/cards.py`
-- Job wrapper: `netbox_proxbox/jobs.py` (`ProxboxSyncJob`)
+- Job wrapper: `netbox_proxbox/jobs.py` (`Proxmox2NetBoxSyncJob`)
 
 ## Installation (NetBox v4)
 
@@ -89,17 +89,17 @@ In NetBox UI:
 Example from NetBox shell:
 
 ```python
-from netbox_proxbox.jobs import ProxboxSyncJob
+from netbox_proxbox.jobs import Proxmox2NetBoxSyncJob
 from netbox_proxbox.choices import SyncTypeChoices
 
 # Full sync
-ProxboxSyncJob.enqueue(sync_type=SyncTypeChoices.ALL)
+Proxmox2NetBoxSyncJob.enqueue(sync_type=SyncTypeChoices.ALL)
 
 # Devices only
-ProxboxSyncJob.enqueue(sync_type=SyncTypeChoices.DEVICES)
+Proxmox2NetBoxSyncJob.enqueue(sync_type=SyncTypeChoices.DEVICES)
 
 # Virtual machines only
-ProxboxSyncJob.enqueue(sync_type=SyncTypeChoices.VIRTUAL_MACHINES)
+Proxmox2NetBoxSyncJob.enqueue(sync_type=SyncTypeChoices.VIRTUAL_MACHINES)
 ```
 
 Behavior note:

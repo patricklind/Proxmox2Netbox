@@ -4,7 +4,7 @@ async function poll(objectType) {
         // Fetch the data from the FastAPI endpoint and save it to a variable
         try {
             if (objectType === 'virtual-machine' || objectType === 'device' || objectType === 'full-update') {
-                const response = await fetch(`/plugins/proxbox/websocket/${objectType}?json_response=true`)
+                const response = await fetch(`/plugins/proxmox2netbox/websocket/${objectType}?json_response=true`)
                 console.log('response', response)
                 data = await response.json()
             }

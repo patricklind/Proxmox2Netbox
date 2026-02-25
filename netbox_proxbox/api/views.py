@@ -14,12 +14,12 @@ from .serializers import (
     VMBackupSerializer
 )
 
-class ProxBoxRootView(APIRootView):
+class Proxmox2NetBoxRootView(APIRootView):
     """
-    ProxBox API root view
+    Proxmox2NetBox API root view
     """
     def get_view_name(self):
-        return "ProxBox"
+        return "Proxmox2NetBox"
 
     def get(self, request, *args, **kwargs):
         # Get the default response from the parent class
@@ -29,11 +29,11 @@ class ProxBoxRootView(APIRootView):
         base_url = request.build_absolute_uri('/').rstrip('/')
         
         # Add the endpoints link to the response data
-        response.data['endpoints'] = f"{base_url}/api/plugins/proxbox/endpoints/"
+        response.data['endpoints'] = f"{base_url}/api/plugins/proxmox2netbox/endpoints/"
         
         return response
 
-class ProxBoxEndpointsView(APIRootView):
+class Proxmox2NetBoxEndpointsView(APIRootView):
     def get_view_name(self):
         return "Endpoints"
 
@@ -75,18 +75,18 @@ class JournalEntryViewSet(NetBoxModelViewSet):
         get_queryset: Filters journal entries by SyncProcess object_id if provided
         
     API Endpoints:
-        GET /api/plugins/proxbox/journal-entries/ - List all journal entries
-        GET /api/plugins/proxbox/journal-entries/?object_id=<id> - Filter by SyncProcess
-        POST /api/plugins/proxbox/journal-entries/ - Create new entry
-        PUT /api/plugins/proxbox/journal-entries/<id>/ - Update entry
-        DELETE /api/plugins/proxbox/journal-entries/<id>/ - Delete entry
+        GET /api/plugins/proxmox2netbox/journal-entries/ - List all journal entries
+        GET /api/plugins/proxmox2netbox/journal-entries/?object_id=<id> - Filter by SyncProcess
+        POST /api/plugins/proxmox2netbox/journal-entries/ - Create new entry
+        PUT /api/plugins/proxmox2netbox/journal-entries/<id>/ - Update entry
+        DELETE /api/plugins/proxmox2netbox/journal-entries/<id>/ - Delete entry
         
     Example Usage:
         # Get all journal entries for a specific SyncProcess
-        GET /api/plugins/proxbox/journal-entries/?object_id=1
+        GET /api/plugins/proxmox2netbox/journal-entries/?object_id=1
         
         # Create a new journal entry
-        POST /api/plugins/proxbox/journal-entries/
+        POST /api/plugins/proxmox2netbox/journal-entries/
         {
             "assigned_object_type": "syncprocess",
             "assigned_object_id": 1,

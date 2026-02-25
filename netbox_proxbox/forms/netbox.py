@@ -7,7 +7,7 @@ from netbox.forms import NetBoxModelForm, NetBoxModelFilterSetForm
 from ipam.models import IPAddress
 from users.models import Token
 
-# Proxbox Imports
+# Proxmox2NetBox Imports
 from ..models import NetBoxEndpoint
 
 

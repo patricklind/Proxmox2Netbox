@@ -2,7 +2,7 @@
 from netbox.views import generic
 from utilities.views import register_model_view
 
-# Proxbox Imports
+# Proxmox2NetBox Imports
 from netbox_proxbox.models import ProxmoxEndpoint
 from netbox_proxbox.tables import ProxmoxEndpointTable
 from netbox_proxbox.filtersets import ProxmoxEndpointFilterSet

@@ -1,4 +1,4 @@
-"""Service layer for runtime-critical Proxbox logic."""
+"""Service layer for runtime-critical Proxmox2NetBox logic."""
 
 from netbox_proxbox.services.proxmox_sync import (
     ProxmoxSyncError,

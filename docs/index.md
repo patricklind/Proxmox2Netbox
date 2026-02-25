@@ -13,7 +13,7 @@
 
 The following table shows the Netbox and Proxmox versions compatible (tested) with Proxmox2NetBox plugin.
 
-| [netbox version](https://github.com/netbox-community/netbox)   | proxmox version | [proxbox version](https://github.com/patricklind/Proxmox2Netbox) | [proxbox-api](https://github.com/emersonfelipesp/proxbox-api) | [pynetbox-api](https://github.com/emersonfelipesp/pynetbox-api) |
+| [netbox version](https://github.com/netbox-community/netbox)   | proxmox version | [proxmox2netbox version](https://github.com/patricklind/Proxmox2NetBox) | [proxmox2netbox-api](https://github.com/emersonfelipesp/proxmox2netbox-api) | [pynetbox-api](https://github.com/emersonfelipesp/pynetbox-api) |
 |------------------|-----------------|-----------------|--------------|--------------|
 | =v4.2.6          | >=8.3.0         | v1.0.1          | v0.0.2.post3 | v0.0.2.post1 |
 | =v4.2.6          | >=8.3.0         | v0.0.6b2        | v0.0.2       | v0.0.2       | 
@@ -57,7 +57,7 @@ The backend can be on a different venv (virtual environment) as it is a complete
 The communication between the plugin and its backend is fully through API.
 
 ```
-pip install proxbox-api
+pip install proxmox2netbox-api
 uvicorn main:app --host 0.0.0.0 --port 8800
 ```
 
@@ -73,4 +73,4 @@ For detailed installation instructions, please refer to the following guides:
 
 ## Stars History 📈
 
-[![Star History Chart](https://api.star-history.com/svg?repos=patricklind/Proxmox2Netbox&type=Timeline)](https://star-history.com/#patricklind/Proxmox2Netbox&Timeline)
+[![Star History Chart](https://api.star-history.com/svg?repos=patricklind/Proxmox2NetBox&type=Timeline)](https://star-history.com/#patricklind/Proxmox2NetBox&Timeline)

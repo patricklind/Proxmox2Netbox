@@ -27,8 +27,8 @@ def get_fastapi_url(object):
     fastapi_websocket_url = fastapi_wss_url if object.verify_ssl else fastapi_ws_url
     
     if object.verify_ssl:
-        if any(host in fastapi_url for host in ['proxbox.backend.local', 'localhost', '127.0.0.1']):
-            # If proxbox.backend.local is in the URL, set the REQUESTS_CA_BUNDLE environment variable.
+        if any(host in fastapi_url for host in ['proxmox2netbox.backend.local', 'localhost', '127.0.0.1']):
+            # If proxmox2netbox.backend.local is in the URL, set the REQUESTS_CA_BUNDLE environment variable.
             # It means user used mkcert to generate a certificate for the domain.
             # This is necessary to avoid SSL errors, so that python requests library can trust the certificate.
             

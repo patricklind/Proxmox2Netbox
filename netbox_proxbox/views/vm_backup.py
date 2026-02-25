@@ -6,7 +6,7 @@ from virtualization.models import VirtualMachine
 
 from django.contrib import messages
 
-# Proxbox Imports
+# Proxmox2NetBox Imports
 from netbox_proxbox.models import VMBackup
 from netbox_proxbox.tables import VMBackupTable
 from netbox_proxbox.filtersets import VMBackupFilterSet

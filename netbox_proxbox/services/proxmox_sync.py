@@ -156,11 +156,11 @@ def _update_endpoint_metadata(session: EndpointSession) -> dict[str, Any]:
 
 def _ensure_base_objects(mode: str) -> dict[str, Any]:
     tag, _ = Tag.objects.get_or_create(
-        slug="proxbox",
+        slug="proxmox2netbox",
         defaults={
-            "name": "Proxbox",
+            "name": "Proxmox2NetBox",
             "color": "ff5722",
-            "description": "Objects managed by netbox-proxbox",
+            "description": "Objects managed by proxmox2netbox",
         },
     )
     manufacturer, _ = Manufacturer.objects.get_or_create(
@@ -172,8 +172,8 @@ def _ensure_base_objects(mode: str) -> dict[str, Any]:
         defaults={"manufacturer": manufacturer, "model": "Proxmox Node"},
     )
     site, _ = Site.objects.get_or_create(
-        slug="proxbox",
-        defaults={"name": "Proxbox"},
+        slug="proxmox2netbox",
+        defaults={"name": "Proxmox2NetBox"},
     )
     node_role, _ = DeviceRole.objects.get_or_create(
         slug="proxmox-node",
@@ -306,7 +306,7 @@ def _upsert_devices_for_session(session: EndpointSession) -> dict[str, int]:
                 "site": base["site"],
                 "status": desired_status,
                 "cluster": cluster,
-                "description": "Imported from Proxmox by netbox-proxbox",
+                "description": "Imported from Proxmox by proxmox2netbox",
             },
         )
         if was_created:
@@ -368,7 +368,7 @@ def _upsert_virtual_machines_for_session(session: EndpointSession) -> dict[str, 
             "vcpus": int(resource.get("maxcpu", 0)) or None,
             "memory": int((resource.get("maxmem", 0) or 0) / 1_000_000) or None,
             "disk": int((resource.get("maxdisk", 0) or 0) / 1_000_000) or None,
-            "comments": "Imported from Proxmox by netbox-proxbox",
+            "comments": "Imported from Proxmox by proxmox2netbox",
         }
 
         vm, was_created = VirtualMachine.objects.get_or_create(name=vm_name, defaults=desired)

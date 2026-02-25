@@ -89,13 +89,13 @@ def run_command(sudo_command):
 
 def find_proxbox_service_in_ls(service_name: str, folder_path: str):
     """
-    ### Find the Proxbox service in the list of services.
+    ### Find the Proxmox2NetBox service in the list of services.
     
     This function uses the `ls` command to list the services in the system and
-    searches for the Proxbox service in the output.
+    searches for the Proxmox2NetBox service in the output.
     
     **Returns:**
-    - **bool:** True if the Proxbox service is found, False otherwise.
+    - **bool:** True if the Proxmox2NetBox service is found, False otherwise.
     """
     
     output:str = str(run_command(['sudo', '-S', 'ls', '-l', folder_path]))
@@ -109,103 +109,103 @@ def find_proxbox_service_in_ls(service_name: str, folder_path: str):
 
 def check_proxbox_service_file():
     """
-    Checks for the existence of the `proxbox.service`' file in the systemd folder.
+    Checks for the existence of the `proxmox2netbox.service`' file in the systemd folder.
     If the file does not exist, attempts to download it from a specified GitHub repository.
    
     **Steps:**
-    1. Checks if the `proxbox.service` file exists in the '/etc/systemd/system' directory.
+    1. Checks if the `proxmox2netbox.service` file exists in the '/etc/systemd/system' directory.
     2. If the file is not found, changes the directory to '/etc/systemd/system'.
-    3. Attempts to download the `proxbox.service` file from the GitHub repository.
-    4. Rechecks if the `proxbox.service` file exists after the download attempt.
+    3. Attempts to download the `proxmox2netbox.service` file from the GitHub repository.
+    4. Rechecks if the `proxmox2netbox.service` file exists after the download attempt.
     
     **Returns:**
-    - **bool:** True if the `proxbox.service` file is found or successfully downloaded, False otherwise.
+    - **bool:** True if the `proxmox2netbox.service` file is found or successfully downloaded, False otherwise.
     """
     
     branch: str = 'develop'
     systemd_folder: str = '/etc/systemd/system'
-    service_name: str = 'proxbox.service'
-    github_url: str = f'https://raw.githubusercontent.com/netdevopsbr/netbox-proxbox/{branch}/contrib/{service_name}'
+    service_name: str = 'proxmox2netbox.service'
+    github_url: str = f'https://raw.githubusercontent.com/patricklind/Proxmox2Netbox/{branch}/contrib/{service_name}'
     
     file_exists: bool = False
     
     file_exists = find_proxbox_service_in_ls(service_name=service_name, folder_path=systemd_folder)
         
     if not file_exists:
-        print("Proxbox service file not found.")
+        print("Proxmox2NetBox service file not found.")
         
         try:
             run_command(['sudo', '-S', 'wget', '-P', systemd_folder, github_url])
             run_command(['sudo', '-S', 'systemctl', 'daemon-reload'])
             
         except Exception as error:
-            print(f"Error getting proxbox.service file.\n   > {error}")
+            print(f"Error getting proxmox2netbox.service file.\n   > {error}")
             return False
 
         file_exists = find_proxbox_service_in_ls(service_name=service_name, folder_path=systemd_folder)
         
         if file_exists:
-            print("Proxbox service file found.")
+            print("Proxmox2NetBox service file found.")
             return True
     else:
-        print("Proxbox service file found.")
+        print("Proxmox2NetBox service file found.")
         return True
     
-    print(f"[ERROR] Proxbox service file not found and not able to get it from GitHub.\nURL to Download it: {github_url}")
+    print(f"[ERROR] Proxmox2NetBox service file not found and not able to get it from GitHub.\nURL to Download it: {github_url}")
     return False
 
 
 def change_proxbox_service(desired_state: str):
     """
-    ### Change the state of the Proxbox service.
+    ### Change the state of the Proxmox2NetBox service.
     
-    This function attempts to start, restart, or stop the Proxbox service
+    This function attempts to start, restart, or stop the Proxmox2NetBox service
     based on the provided desired state. It uses system commands to manage
     the service.
     
     **Args:**
-    - **desired_state (str):** The desired state of the Proxbox service. 
+    - **desired_state (str):** The desired state of the Proxmox2NetBox service. 
     It can be "start", "restart", or "stop".
     
     **Raises:**
-    - **Exception:** If an error occurs while attempting to change the Proxbox service state.
+    - **Exception:** If an error occurs while attempting to change the Proxmox2NetBox service state.
     """
     
     if check_proxbox_service_file():
-        print(f"Proxbox service file found. Try to change Service State to: {desired_state}")
+        print(f"Proxmox2NetBox service file found. Try to change Service State to: {desired_state}")
         try:
             if desired_state == "start": 
                 print("START PROXBOX")
-                run_command(['sudo', '-S', 'systemctl', 'start', 'proxbox'])
+                run_command(['sudo', '-S', 'systemctl', 'start', 'proxmox2netbox'])
                 
             if desired_state == "restart":
                 print("RESTART PROXBOX")
-                run_command(['sudo', '-S', 'systemctl', 'restart', 'proxbox'])     
+                run_command(['sudo', '-S', 'systemctl', 'restart', 'proxmox2netbox'])     
                 
             if desired_state == "stop":
                 print("STOP PROXBOX")
-                run_command(['sudo', '-S', 'systemctl', 'stop', 'proxbox'])
+                run_command(['sudo', '-S', 'systemctl', 'stop', 'proxmox2netbox'])
             
         except Exception as error:
-            print(f"Error occured trying to change Proxbox status.\n   > {error}")
+            print(f"Error occured trying to change Proxmox2NetBox status.\n   > {error}")
     else:
-        print("Proxbox service file not found. Not able to change Service State.")
+        print("Proxmox2NetBox service file not found. Not able to change Service State.")
         return False
 
         
-class FixProxboxBackendView(View):
+class FixProxmox2NetBoxBackendView(View):
     """
-    ### View to handle the fixing of the Proxbox backend service.
+    ### View to handle the fixing of the Proxmox2NetBox backend service.
     
     **Attributes:**
     - **template_name (str):** The path to the HTML template for this view.
     
     **Methods:**
-    - **get(request):** Handles GET requests to start the Proxbox service and redirect to the home page.
+    - **get(request):** Handles GET requests to start the Proxmox2NetBox service and redirect to the home page.
     If an error occurs while starting the service, it prints the error.
     """
 
-    template_name = 'netbox_proxbox/fix-proxbox-backend.html'
+    template_name = 'netbox_proxbox/fix-proxmox2netbox-backend.html'
     
     def get(self, request):
         try:
@@ -219,16 +219,16 @@ class FixProxboxBackendView(View):
         return redirect('plugins:netbox_proxbox:home')
 
 
-class StopProxboxBackendView(View):
+class StopProxmox2NetBoxBackendView(View):
     """
-    ### StopProxboxBackendView handles the stopping of the Proxbox backend service.
+    ### StopProxmox2NetBoxBackendView handles the stopping of the Proxmox2NetBox backend service.
     
     **Methods:**
-    - **get(request):** Handles GET requests to stop the Proxbox service. Redirects to the home page of the netbox_proxbox plugin.
+    - **get(request):** Handles GET requests to stop the Proxmox2NetBox service. Redirects to the home page of the netbox_proxbox plugin.
     - request: The HTTP request object.
     
     **Raises:**
-    - **Exception:** If an error occurs while attempting to stop the Proxbox service.
+    - **Exception:** If an error occurs while attempting to stop the Proxmox2NetBox service.
     """
     
     def get(self, request):
@@ -241,12 +241,12 @@ class StopProxboxBackendView(View):
         return redirect('plugins:netbox_proxbox:home')
 
         
-class RestartProxboxBackendView(View):
+class RestartProxmox2NetBoxBackendView(View):
     """
-    ### RestartProxboxBackendView is a Django view that handles the restart of the Proxbox backend service.
+    ### RestartProxmox2NetBoxBackendView is a Django view that handles the restart of the Proxmox2NetBox backend service.
    
     **Methods:**
-    - **get(request):** Handles GET requests to restart the Proxbox service. It calls the change_proxbox_service function
+    - **get(request):** Handles GET requests to restart the Proxmox2NetBox service. It calls the change_proxbox_service function
     with the desired state set to "restart". If an exception occurs, it prints the error and redirects
     to the home page of the netbox_proxbox plugin.
     """
@@ -261,23 +261,23 @@ class RestartProxboxBackendView(View):
         return redirect('plugins:netbox_proxbox:home')
 
 
-class StatusProxboxBackendView(View):
+class StatusProxmox2NetBoxBackendView(View):
     """
-    ### A Django view to display the status of the Proxbox backend service.
+    ### A Django view to display the status of the Proxmox2NetBox backend service.
     
     **Attributes:**
     - **template_name (str):** The template to render the status page.
     
     **Methods:**
-    - **get(request):** Handles GET requests to retrieve and display the status of the Proxbox service.
-    Executes a system command to get the status of the Proxbox service using `systemctl`.
+    - **get(request):** Handles GET requests to retrieve and display the status of the Proxmox2NetBox service.
+    Executes a system command to get the status of the Proxmox2NetBox service using `systemctl`.
     Parses the output and formats it for display in the template.
     Handles exceptions and errors that may occur during the command execution.
     Returns the rendered template with the status information.
     """
     
     
-    template_name = "netbox_proxbox/proxbox-backend-status.html"
+    template_name = "netbox_proxbox/proxmox2netbox-backend-status.html"
     
     def get(self, request):
             
@@ -287,7 +287,7 @@ class StatusProxboxBackendView(View):
         try:
             print("CONSOLE STATUS")
             status_proxbox_process = subprocess.check_output(
-                ['sudo','systemctl','status','proxbox'],
+                ['sudo','systemctl','status','proxmox2netbox'],
                 stderr=subprocess.STDOUT,
                 text=True
             )

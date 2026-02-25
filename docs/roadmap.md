@@ -11,4 +11,4 @@
 - Translate Documentation to Portuguese (pt-br) for brazilian community
 - **Multi-Cluster suppport**
 
-If you wish to have another feature or functionality not present today and not mentioned here, checkout **[Issues](https://github.com/patricklind/Proxmox2Netbox/issues)** and/or **[Discussions](https://github.com/orgs/netdevopsbr/discussions)** to view if there's already ongoing work. If not, feel free to start **opening a discussion** and expects feedback from community so that it is approved and transferred to GitHub Issues.
+If you wish to have another feature or functionality not present today and not mentioned here, checkout **[Issues](https://github.com/patricklind/Proxmox2NetBox/issues)** and/or **[Discussions](https://github.com/orgs/netdevopsbr/discussions)** to view if there's already ongoing work. If not, feel free to start **opening a discussion** and expects feedback from community so that it is approved and transferred to GitHub Issues.

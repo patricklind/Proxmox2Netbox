@@ -14,10 +14,10 @@ PLUGINS = ['netbox_proxbox']
 # Clone the repository
 cd /opt/netbox/netbox/netbox
 
-git clone https://github.com/patricklind/Proxmox2Netbox.git
+git clone https://github.com/patricklind/Proxmox2NetBox.git
 
 # Enter the plugin directory
-cd Proxmox2Netbox
+cd Proxmox2NetBox
 
 # Activate virtual environment
 source /opt/netbox/venv/bin/activate
@@ -46,7 +46,7 @@ Navigate to the Netbox directory and clone the Proxmox2NetBox plugin repository:
 
 ```
 cd /opt/netbox/netbox/netbox
-git clone https://github.com/patricklind/Proxmox2Netbox.git
+git clone https://github.com/patricklind/Proxmox2NetBox.git
 ```
 
 ## Step 2: Enter the Plugin Directory
@@ -54,7 +54,7 @@ git clone https://github.com/patricklind/Proxmox2Netbox.git
 Change into the plugin directory:
 
 ```
-cd Proxmox2Netbox
+cd Proxmox2NetBox
 ```
 
 ## Step 3: Enter Netbox's Virtual Environment

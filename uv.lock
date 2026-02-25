@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.8"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -267,44 +267,6 @@ wheels = [
 ]
 
 [[package]]
-name = "netbox-proxbox"
-version = "0.0.6b2.post1"
-source = { editable = "." }
-dependencies = [
-    { name = "websockets", version = "13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "websockets", version = "15.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "bandit", version = "1.7.10", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "bandit", version = "1.8.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "black", version = "24.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "black", version = "25.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "invoke" },
-    { name = "pydocstyle" },
-    { name = "pylint", version = "3.2.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "pylint", version = "3.3.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "pylint-django", version = "2.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "pylint-django", version = "2.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "yamllint", version = "1.35.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "yamllint", version = "1.37.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=24.3" },
-    { name = "invoke", marker = "extra == 'dev'", specifier = ">=1.5.0" },
-    { name = "pydocstyle", marker = "extra == 'dev'", specifier = ">=6.0.0" },
-    { name = "pylint", marker = "extra == 'dev'", specifier = ">=2.7.4" },
-    { name = "pylint-django", marker = "extra == 'dev'", specifier = ">=2.4.3" },
-    { name = "websockets", specifier = ">=13.1" },
-    { name = "yamllint", marker = "extra == 'dev'", specifier = ">=1.26.1" },
-]
-provides-extras = ["dev"]
-
-[[package]]
 name = "packaging"
 version = "25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -359,6 +321,55 @@ resolution-markers = [
 sdist = { url = "https://files.pythonhosted.org/packages/b6/2d/7d512a3913d60623e7eb945c6d1b4f0bddf1d0b7ada5225274c87e5b53d1/platformdirs-4.3.7.tar.gz", hash = "sha256:eb437d586b6a0986388f0d6f74aa0cde27b48d0e3d66843640bfb6bdcdb6e351", size = 21291, upload-time = "2025-03-19T20:36:10.989Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6d/45/59578566b3275b8fd9157885918fcd0c4d74162928a5310926887b856a51/platformdirs-4.3.7-py3-none-any.whl", hash = "sha256:a03875334331946f13c549dbd8f4bac7a13a50a895a0eb1e8c6a8ace80d40a94", size = 18499, upload-time = "2025-03-19T20:36:09.038Z" },
+]
+
+[[package]]
+name = "proxmox2netbox"
+version = "1.0.1"
+source = { editable = "." }
+dependencies = [
+    { name = "proxmoxer" },
+    { name = "websockets", version = "13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "websockets", version = "15.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "bandit", version = "1.7.10", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "bandit", version = "1.8.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "black", version = "24.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "black", version = "25.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "invoke" },
+    { name = "pydocstyle" },
+    { name = "pylint", version = "3.2.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pylint", version = "3.3.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "pylint-django", version = "2.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pylint-django", version = "2.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "yamllint", version = "1.35.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "yamllint", version = "1.37.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0" },
+    { name = "black", marker = "extra == 'dev'", specifier = ">=24.3" },
+    { name = "invoke", marker = "extra == 'dev'", specifier = ">=1.5.0" },
+    { name = "proxmoxer", specifier = ">=2.2.0" },
+    { name = "pydocstyle", marker = "extra == 'dev'", specifier = ">=6.0.0" },
+    { name = "pylint", marker = "extra == 'dev'", specifier = ">=2.7.4" },
+    { name = "pylint-django", marker = "extra == 'dev'", specifier = ">=2.4.3" },
+    { name = "websockets", specifier = ">=13.1" },
+    { name = "yamllint", marker = "extra == 'dev'", specifier = ">=1.26.1" },
+]
+provides-extras = ["dev"]
+
+[[package]]
+name = "proxmoxer"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6a/54/dc2919eed681ca31220a9021e35935a3995335069b520279b4d55b9df822/proxmoxer-2.2.0.tar.gz", hash = "sha256:3ed63a58e5c0822841afdb3801f9d913a4996955c1c54f7319b5842ba2615006", size = 29666, upload-time = "2024-12-15T02:08:36.351Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2c/9a/0c3570e2ccce07d304c8a25f7238accc5174c234f5eddb3b666e20777898/proxmoxer-2.2.0-py3-none-any.whl", hash = "sha256:7e4431fd38e1a9321eedf6d860ddc373fc2b29ce1845fa8b072d7580d99f6b90", size = 19217, upload-time = "2024-12-15T02:08:34.047Z" },
 ]
 
 [[package]]

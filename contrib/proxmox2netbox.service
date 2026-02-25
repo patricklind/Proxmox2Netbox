@@ -1,0 +1,22 @@
+[Unit]
+Description=Proxmox2NetBox Backend Service (FastAPI)
+Documentation=https://github.com/patricklind/Proxmox2Netbox
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User=netbox
+Group=netbox
+PIDFile=/var/tmp/proxmox2netbox.pid
+WorkingDirectory=/opt/netbox/netbox/proxmox2netbox
+
+ExecStart=/opt/proxmox2netbox-api/venv/bin/uvicorn proxbox_api.main:app --host 0.0.0.0 --port 8800 --app-dir /opt/proxmox2netbox-api
+
+Restart=on-failure
+RestartSec=30
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

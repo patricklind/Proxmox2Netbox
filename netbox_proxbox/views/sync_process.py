@@ -4,7 +4,7 @@ from utilities.views import register_model_view
 from django.shortcuts import redirect
 from django.contrib import messages
 
-# Proxbox Imports
+# Proxmox2NetBox Imports
 from netbox_proxbox.models import SyncProcess
 from netbox_proxbox.tables import SyncProcessTable
 from netbox_proxbox.filtersets import SyncProcessFilterSet

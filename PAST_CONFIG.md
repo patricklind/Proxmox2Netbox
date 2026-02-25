@@ -12,7 +12,7 @@ PLUGINS_CONFIG = {
     'netbox_proxbox': {
         'proxmox': [
             {
-                'domain': 'proxbox.example.com',    # May also be IP address
+                'domain': 'proxmox2netbox.example.com',    # May also be IP address
                 'http_port': 8006,
                 'user': 'root@pam',   # always required
                 'password': 'Strong@P4ssword', # only required, if you don't want to use token based authentication
@@ -48,8 +48,8 @@ PLUGINS_CONFIG = {
         'fastapi': {
             # Uvicorn Host is (most of the time) the same as Netbox (as both servers run on the same machine)
             'uvicorn_host': 'localhost',
-            'uvicorn_port': 8800,    # Default Proxbox FastAPI port
-            # Although it seems weird, the sudo-user is necessary so that Proxbox automatically starts Proxbox Backend.
+            'uvicorn_port': 8800,    # Default Proxmox2NetBox FastAPI port
+            # Although it seems weird, the sudo-user is necessary so that Proxmox2NetBox automatically starts Proxmox2NetBox Backend.
             # It makes it more "plug-in", without the need to user input manual commands.
             'sudo': {
                 'user': "sudo_enabled_user",

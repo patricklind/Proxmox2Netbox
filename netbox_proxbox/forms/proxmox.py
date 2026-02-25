@@ -7,7 +7,7 @@ from utilities.forms.fields import CommentField, DynamicModelChoiceField
 from ipam.models import IPAddress
 from django.utils.translation import gettext as _
 
-# Proxbox Imports
+# Proxmox2NetBox Imports
 from ..models import ProxmoxEndpoint
 from ..choices import ProxmoxModeChoices
 

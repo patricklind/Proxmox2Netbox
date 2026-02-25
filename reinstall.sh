@@ -2,7 +2,7 @@
 
 systemctl stop netbox.service
 
-pip3 uninstall netbox-proxbox -y
+pip3 uninstall proxmox2netbox -y
 
 python3 setup.py develop
 

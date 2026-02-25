@@ -5,7 +5,7 @@ from django import forms
 from utilities.forms.fields import DynamicModelChoiceField, CommentField
 from netbox.forms import NetBoxModelForm, NetBoxModelFilterSetForm
 from virtualization.models import VirtualMachine
-# Proxbox Imports
+# Proxmox2NetBox Imports
 from netbox_proxbox.models import VMBackup
 from netbox_proxbox.choices import ProxmoxBackupSubtypeChoices, ProxmoxBackupFormatChoices
 
