@@ -1,6 +1,6 @@
-# Proxbox Backend Setup
+# Proxmox2NetBox Backend Setup
 
-The Proxbox backend is required for the plugin to function. This guide covers the installation and configuration of the backend service.
+The Proxmox2NetBox backend is required for the plugin to function. This guide covers the installation and configuration of the backend service.
 
 ## Option 1: Using Docker (Recommended)
 
@@ -13,11 +13,11 @@ docker run -d -p 8800:8800 --name proxbox-api emersonfelipesp/proxbox-api:latest
 
 ## Option 2: Manual Installation
 
-If Docker is not an option, you can install the backend manually. For detailed instructions, please refer to the [Proxbox API documentation](https://github.com/netdevopsbr/netbox-proxbox/blob/develop/proxbox_api/README.md).
+If Docker is not an option, you can install the backend manually. For detailed instructions, please refer to the [Proxmox2NetBox API documentation](https://github.com/patricklind/Proxmox2Netbox/blob/develop/proxbox_api/README.md).
 
 ## SSL Configuration
 
-If you're using SSL certificates, you may need to set the appropriate permissions for the Proxbox backend to access them:
+If you're using SSL certificates, you may need to set the appropriate permissions for the Proxmox2NetBox backend to access them:
 
 ```
 sudo chmod +rx -R /etc/ssl/private/
@@ -30,7 +30,7 @@ To run the backend as a systemd service:
 
 1. Copy the service file to the systemd directory:
 ```
-sudo cp -v /opt/netbox/netbox/netbox-proxbox/contrib/*.service /etc/systemd/system/
+sudo cp -v /opt/netbox/netbox/proxmox2netbox/contrib/*.service /etc/systemd/system/
 ```
 
 2. Reload systemd and enable the service:
@@ -50,7 +50,7 @@ sudo systemctl status proxbox
 For development purposes, you can run the backend directly:
 
 ```
-/opt/netbox/venv/bin/uvicorn netbox-proxbox.proxbox_api.main:app --host 0.0.0.0 --port 8800 --app-dir /opt/netbox/netbox --ssl-keyfile=/etc/ssl/private/netbox.key --ssl-certfile=/etc/ssl/certs/netbox.crt --reload
+/opt/netbox/venv/bin/uvicorn proxbox_api.main:app --host 0.0.0.0 --port 8800 --app-dir /opt/netbox/netbox --ssl-keyfile=/etc/ssl/private/netbox.key --ssl-certfile=/etc/ssl/certs/netbox.crt --reload
 ```
 
 ### Creating Self-Signed Certificates (Development Only)

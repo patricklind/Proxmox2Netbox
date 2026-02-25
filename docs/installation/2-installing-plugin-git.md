@@ -14,10 +14,10 @@ PLUGINS = ['netbox_proxbox']
 # Clone the repository
 cd /opt/netbox/netbox/netbox
 
-git clone https://github.com/your-repo/netbox-proxbox.git
+git clone https://github.com/patricklind/Proxmox2Netbox.git
 
 # Enter the plugin directory
-cd netbox-proxbox
+cd Proxmox2Netbox
 
 # Activate virtual environment
 source /opt/netbox/venv/bin/activate
@@ -38,15 +38,15 @@ sudo systemctl restart netbox
 
 ---
 
-Follow the steps below to install the Proxbox plugin using Git.
+Follow the steps below to install the Proxmox2NetBox plugin using Git.
 
 ## Step 1: Clone the Repository
 
-Navigate to the Netbox directory and clone the Proxbox plugin repository:
+Navigate to the Netbox directory and clone the Proxmox2NetBox plugin repository:
 
 ```
 cd /opt/netbox/netbox/netbox
-git clone https://github.com/your-repo/netbox-proxbox.git
+git clone https://github.com/patricklind/Proxmox2Netbox.git
 ```
 
 ## Step 2: Enter the Plugin Directory
@@ -54,7 +54,7 @@ git clone https://github.com/your-repo/netbox-proxbox.git
 Change into the plugin directory:
 
 ```
-cd netbox-proxbox
+cd Proxmox2Netbox
 ```
 
 ## Step 3: Enter Netbox's Virtual Environment
@@ -101,6 +101,6 @@ sudo systemctl restart netbox
 
 ## Next Steps
 
-After completing the plugin installation, you'll need to set up the Proxbox backend. Please refer to the [Backend Setup Guide](../installation/backend-setup.md) for detailed instructions.
+After completing the plugin installation, you'll need to set up the Proxmox2NetBox backend. Please refer to the [Backend Setup Guide](../installation/backend-setup.md) for detailed instructions.
 
 For more information about using the plugin, please refer to the [Usage Guide](../usage.md).

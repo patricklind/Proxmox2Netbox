@@ -1,4 +1,4 @@
-# netbox-proxbox
+# Proxmox2NetBox
 
 NetBox plugin for synchronizing Proxmox inventory data into NetBox (NetBox v4).
 
@@ -6,7 +6,7 @@ NetBox plugin for synchronizing Proxmox inventory data into NetBox (NetBox v4).
 
 - NetBox: `>=4.2.0, <5.0.0`
 - Python: `>=3.8`
-- Plugin package version in this repository: `0.0.6b2`
+- Plugin package version in this repository: `1.0.1`
 
 ## What Works (Current Runtime)
 
@@ -44,7 +44,7 @@ Primary runtime entrypoints:
 Inside NetBox environment:
 
 ```bash
-pip install netbox-proxbox
+pip install proxmox2netbox
 ```
 
 ### 2. Enable plugin
@@ -87,7 +87,7 @@ python manage.py collectstatic --no-input
 
 In NetBox UI:
 
-- `Plugins -> Proxbox -> Endpoints -> Proxmox Endpoints`
+- `Plugins -> Proxmox2NetBox -> Endpoints -> Proxmox Endpoints`
 - Create at least one endpoint with:
   - `username`
   - either `password` **or** (`token_name` + `token_value`)
@@ -95,7 +95,7 @@ In NetBox UI:
 
 ### Run sync from UI
 
-- `Plugins -> Proxbox -> Full Update`
+- `Plugins -> Proxmox2NetBox -> Full Update`
 - Available actions:
   - `Sync Nodes`
   - `Sync Virtual Machines`
@@ -160,9 +160,11 @@ pytest
 
 ### Prerequisites
 
-- You must own the `netbox-proxbox` project on PyPI.
+- You must have access to the [`proxmox2netbox`](https://pypi.org/project/proxmox2netbox/) project on PyPI.
 - If the name is unavailable for your account, change `project.name` in `pyproject.toml` to a unique name before publishing.
-- Add `PYPI_API_TOKEN` as a repository secret in GitHub.
+- Configure one of these publish methods:
+- Add `PYPI_API_TOKEN` as a repository secret in GitHub, or
+- Configure a matching Trusted Publisher in PyPI for this GitHub repository/workflow.
 
 ### Local preflight
 
@@ -178,7 +180,7 @@ twine check dist/*
 - After publish:
 
 ```bash
-pip install netbox-proxbox
+pip install proxmox2netbox
 ```
 
 ## Repository Layout (Relevant Runtime Files)

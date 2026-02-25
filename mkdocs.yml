@@ -1,9 +1,9 @@
-site_name: Proxbox Docs
+site_name: Proxmox2NetBox Docs
 site_dir: ./site
 site_url: https://proxbox.netbox.dev.br/
 docs_dir: ./docs
-repo_name: netdevopsbr/netbox-proxbox
-repo_url: https://github.com/netdevopsbr/netbox-proxbox
+repo_name: patricklind/Proxmox2Netbox
+repo_url: https://github.com/patricklind/Proxmox2Netbox
 theme:
   name: material
   custom_dir: docs/_theme/
@@ -54,7 +54,7 @@ plugins:
             #signature_crossrefs: true
 
 nav:
-  - Proxbox: index.md
+  - Proxmox2NetBox: index.md
   - Installation:
     - Pre-Installation: 'installation/pre-installation.md'
     - Installing the Plugin:
@@ -69,8 +69,8 @@ nav:
   # - Source Code:
   #   - 'src/netboxbasic.md'
   # - Installing & Upgrade:
-  #   - Installing Proxbox: 'installation/index.md'
-  #   - Upgrading Proxbox: 'installation/upgrading.md'
+  #   - Installing Proxmox2NetBox: 'installation/index.md'
+  #   - Upgrading Proxmox2NetBox: 'installation/upgrading.md'
   # - Features:
   #   - Virtual Machine (VM): 'features/virtual-machine.md'
   #   - Containers (LXC): 'features/containers.md'

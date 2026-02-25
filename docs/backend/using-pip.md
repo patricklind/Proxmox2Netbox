@@ -1,6 +1,6 @@
-# Installing and Starting Proxbox-API
+# Installing and Starting Proxmox2NetBox-API
 
-This guide will walk you through the steps to install and start the Proxbox-API using pip.
+This guide will walk you through the steps to install and start the Proxmox2NetBox-API using pip.
 
 ## Prerequisites
 
@@ -10,10 +10,10 @@ This guide will walk you through the steps to install and start the Proxbox-API 
 
 ## TL;DR
 
-Here is a quick summary of the commands to install and start the Proxbox-API (plugin backend):
+Here is a quick summary of the commands to install and start the Proxmox2NetBox-API (plugin backend):
 
 ```bash
-# Create a directory for Proxbox-API
+# Create a directory for Proxmox2NetBox-API
 mkdir /opt/proxbox-api
 cd /opt/proxbox-api
 
@@ -21,11 +21,11 @@ cd /opt/proxbox-api
 python3 -m venv venv
 source venv/bin/activate
 
-# Install Proxbox-API
+# Install Proxmox2NetBox-API
 pip install proxbox-api==0.0.2.post3
 
 # Get the service file from GitHub repository
-wget https://raw.githubusercontent.com/netdevopsbr/netbox-proxbox/refs/heads/develop/contrib/proxbox.service /opt/proxbox-api/
+wget https://raw.githubusercontent.com/patricklind/Proxmox2Netbox/refs/heads/develop/contrib/proxbox.service /opt/proxbox-api/
 
 # Copy the service file to systemd directory
 sudo cp -v /opt/proxbox-api/proxbox.service /etc/systemd/system/
@@ -37,7 +37,7 @@ sudo systemctl enable --now proxbox
 # Check the status of the service
 systemctl status proxbox
 
-# If needed, start Proxbox-API manually
+# If needed, start Proxmox2NetBox-API manually
 /opt/proxbox-api/venv/bin/uvicorn proxbox_api.main:app --host 0.0.0.0 --port 8800
 ```
 
@@ -59,22 +59,22 @@ Activate the virtual environment:
 source venv/bin/activate
 ```
 
-### Install Proxbox-API:
+### Install Proxmox2NetBox-API:
 
-Use pip to install the Proxbox-API package:
+Use pip to install the Proxmox2NetBox-API package:
 
 ```bash
 pip install proxbox-api==0.0.2.post3
 ```
 
-## Starting Proxbox-API
+## Starting Proxmox2NetBox-API
 
 ### systemd Setup
 
 Get the service file from GitHub repository:
 
 ```
-wget https://raw.githubusercontent.com/netdevopsbr/netbox-proxbox/refs/heads/develop/contrib/proxbox.service /opt/proxbox-api/
+wget https://raw.githubusercontent.com/patricklind/Proxmox2Netbox/refs/heads/develop/contrib/proxbox.service /opt/proxbox-api/
 ```
 Then copy `contrib/proxbox.service` to the `/etc/systemd/system/` directory.
 
@@ -100,11 +100,11 @@ You can use the command `systemctl status proxbox` to verify is FastAPI app is r
 systemctl status proxbox
 ```
 
-This will start the Proxbox-API server, and it will be ready to accept requests.
+This will start the Proxmox2NetBox-API server, and it will be ready to accept requests.
 
 You should now be able to access `http://<YOUR-IP>:8800/docs`, like `http://127.0.0.1:8800/docs` (if localhost).
 
-If any errors with the service, try starting Proxbox-API server manually to check for more information or logs:
+If any errors with the service, try starting Proxmox2NetBox-API server manually to check for more information or logs:
 
 ```bash
 /opt/proxbox-api/venv/bin/uvicorn proxbox_api.main:app --host 0.0.0.0 --port 8800
@@ -113,4 +113,4 @@ If any errors with the service, try starting Proxbox-API server manually to chec
 ## Troubleshooting
 
 - If you encounter any issues during installation or startup, ensure that all dependencies are correctly installed and that your Python environment is properly configured.
-- Check the Proxbox-API logs for any error messages that might provide more insight into the problem.
+- Check the Proxmox2NetBox-API logs for any error messages that might provide more insight into the problem.

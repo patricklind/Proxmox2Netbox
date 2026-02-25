@@ -1,3 +1,3 @@
 # ProxBox Configuration
 
-How to configure Proxbox! Ongoing work.
+How to configure Proxmox2NetBox! Ongoing work.

@@ -1,6 +1,6 @@
 # Enable HTMX Navigation on NetBox User Preferences.
 
-> If not enabled, this will cause visual bugs on Proxbox GUI. For more details, [check this issue](https://github.com/netdevopsbr/netbox-proxbox/issues/277).
+> If not enabled, this will cause visual bugs on Proxmox2NetBox GUI. For more details, [check this issue](https://github.com/patricklind/Proxmox2Netbox/issues/277).
 
 Go to **/user/preferences** path and change enable HTMX navigation like below:
 

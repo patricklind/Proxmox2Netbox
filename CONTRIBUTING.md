@@ -1,6 +1,6 @@
-# Contributing to Proxbox
+# Contributing to Proxmox2NetBox
 
-Thank you for contributing to Proxbox.
+Thank you for contributing to Proxmox2NetBox.
 
 This project focuses on stable, predictable synchronization between Proxmox and NetBox. Contributions must preserve existing sync behavior unless a change is clearly documented, tested, and justified.
 
@@ -8,7 +8,7 @@ This project focuses on stable, predictable synchronization between Proxmox and 
 
 ## Project Scope
 
-Proxbox is a NetBox plugin that synchronizes Proxmox data into NetBox.
+Proxmox2NetBox is a NetBox plugin that synchronizes Proxmox data into NetBox.
 
 The sync process includes:
 

@@ -15,7 +15,7 @@ PLUGINS = ['netbox_proxbox']
 source /opt/netbox/venv/bin/activate
 
 # Install plugin
-pip install netbox-proxbox==0.0.6b2
+pip install proxmox2netbox
 
 # Enable plugin in configuration.py (usually on /opt/netbox/netbox/netbox)
 PLUGINS = ['netbox_proxbox']
@@ -33,7 +33,7 @@ sudo systemctl restart netbox
 
 ---
 
-Follow the steps below to install the Proxbox plugin using pip.
+Follow the steps below to install the Proxmox2NetBox plugin using pip.
 
 ## Step 1: Enter Netbox's virtual environment
 
@@ -45,10 +45,10 @@ source /opt/netbox/venv/bin/activate
 
 ## Step 2: Install the plugin package
 
-Install the latest beta version of the Proxbox plugin:
+Install the latest beta version of the Proxmox2NetBox plugin:
 
 ```
-pip install netbox-proxbox==0.0.6b2
+pip install proxmox2netbox
 ```
 
 ## Step 3: Enable the plugin
@@ -79,6 +79,6 @@ sudo systemctl restart netbox
 
 ## Next Steps
 
-After completing the plugin installation, you'll need to set up the Proxbox backend. Please refer to the [Backend Setup Guide](../installation/backend-setup.md) for detailed instructions.
+After completing the plugin installation, you'll need to set up the Proxmox2NetBox backend. Please refer to the [Backend Setup Guide](../installation/backend-setup.md) for detailed instructions.
 
 For more information about using the plugin, please refer to the [Usage Guide](../usage.md).
