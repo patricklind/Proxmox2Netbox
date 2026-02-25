@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   create-release:
@@ -16,3 +17,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+
+      # Releases created by workflows may not always emit follow-up workflow events.
+      # Explicitly dispatch package publishing for reliable tag->release->PyPI flow.
+      - name: Trigger PyPI publish workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-python-package.yml --ref "${GITHUB_REF_NAME}"

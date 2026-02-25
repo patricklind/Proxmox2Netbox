@@ -163,8 +163,8 @@ git tag -a vX.Y.Z -m "Release vX.Y.Z"
 git push origin vX.Y.Z
 ```
 
-- `release.yml` creates the GitHub Release from the tag.
-- `publish-python-package.yml` publishes to PyPI when that release is published.
+- `release.yml` creates the GitHub Release from the tag and dispatches package publish.
+- `publish-python-package.yml` publishes to PyPI (release event and manual/dispatch supported).
 - After publish:
 
 ```bash
