@@ -1,0 +1,52 @@
+name: Feature request
+description: Propose a new feature or enhancement
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for new features and non-bug improvements.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What limitation are you facing today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the desired behavior and user flow.
+    validations:
+      required: true
+  - type: textarea
+    id: sync_impact
+    attributes:
+      label: Sync impact
+      description: Explain whether this changes sync mapping/flow/order.
+      placeholder: |
+        - Mapping changes: yes/no
+        - API call order changes: yes/no
+        - New NetBox objects affected: ...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional alternative approaches.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-checks
+      options:
+        - label: I checked existing issues and discussions.
+          required: true
+        - label: I documented expected impact on current behavior.
+          required: true
+

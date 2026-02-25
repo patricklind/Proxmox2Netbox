@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Proxmox2NetBox README
+    url: https://github.com/patricklind/Proxmox2Netbox#readme
+    about: Check installation, configuration, and release docs before opening an issue.
+  - name: Proxmox2NetBox Wiki
+    url: https://github.com/patricklind/Proxmox2Netbox/wiki
+    about: Check troubleshooting and sync behavior documentation.
+

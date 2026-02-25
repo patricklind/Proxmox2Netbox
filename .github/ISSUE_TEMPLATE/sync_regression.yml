@@ -1,0 +1,80 @@
+name: Sync regression
+description: Report a regression in Proxmox -> NetBox sync behavior
+title: "[Sync Regression]: "
+labels:
+  - bug
+  - regression
+  - sync
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when a previously working sync flow no longer behaves correctly.
+  - type: input
+    id: netbox_version
+    attributes:
+      label: NetBox version
+      placeholder: 4.5.3
+    validations:
+      required: true
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Proxmox2NetBox version
+      placeholder: 1.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: sync_area
+    attributes:
+      label: Affected sync area
+      multiple: true
+      options:
+        - Nodes
+        - Virtual Machines
+        - VM Interfaces
+        - Virtual Disks
+        - Interface IP assignment
+        - Endpoint metadata
+    validations:
+      required: true
+  - type: textarea
+    id: previous_behavior
+    attributes:
+      label: Previous working behavior
+      description: What worked before and on which version.
+    validations:
+      required: true
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: Current behavior
+      description: What changed and what fails now.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Data loss, stale inventory, partial sync, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / traceback / API evidence
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-checks
+      options:
+        - label: I confirmed this worked in a previous version.
+          required: true
+        - label: I included enough detail to reproduce.
+          required: true
+        - label: I verified endpoint credentials and connectivity.
+          required: true
+

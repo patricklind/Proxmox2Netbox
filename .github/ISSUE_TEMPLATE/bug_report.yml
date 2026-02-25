@@ -1,0 +1,87 @@
+name: Bug report
+description: Report a runtime or UI bug in Proxmox2NetBox
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for reproducible runtime/UI/plugin bugs.
+  - type: input
+    id: netbox_version
+    attributes:
+      label: NetBox version
+      description: Example: 4.5.3
+      placeholder: 4.5.3
+    validations:
+      required: true
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Proxmox2NetBox version
+      description: Example: 1.1.0
+      placeholder: 1.1.0
+    validations:
+      required: true
+  - type: input
+    id: proxmox_version
+    attributes:
+      label: Proxmox VE version
+      description: Example: 8.2.x
+      placeholder: 8.x
+    validations:
+      required: false
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment type
+      options:
+        - netbox-docker
+        - bare metal / venv
+        - unknown
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide exact steps.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / traceback
+      description: Paste relevant stacktrace, NetBox logs, or API response.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-checks
+      options:
+        - label: I verified plugin version and NetBox version.
+          required: true
+        - label: I checked existing open/closed issues.
+          required: true
+        - label: I can reproduce this issue consistently.
+          required: true
+
