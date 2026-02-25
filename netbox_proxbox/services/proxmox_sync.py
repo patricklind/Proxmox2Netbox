@@ -18,6 +18,13 @@ from netbox_proxbox.models import ProxmoxEndpoint, SyncProcess
 
 logger = logging.getLogger(__name__)
 
+MANAGED_TAG_SLUG = "proxmox2netbox"
+LEGACY_MANAGED_TAG_SLUGS = (
+    "proxbox",
+    "netbox-proxbox",
+    "proxmox2netbox-plugin",
+)
+
 
 class ProxmoxSyncError(Exception):
     """Raised when Proxmox synchronization fails."""
@@ -35,6 +42,15 @@ def _safe_add_tag(obj: Any, tag: Tag) -> None:
     if obj.pk is None:
         return
     content_type = ContentType.objects.get_for_model(obj, for_concrete_model=False)
+    # Keep only the canonical managed tag on synchronized objects.
+    legacy_slugs = [slug for slug in LEGACY_MANAGED_TAG_SLUGS if slug != tag.slug]
+    if legacy_slugs:
+        TaggedItem.objects.filter(
+            content_type=content_type,
+            object_id=obj.pk,
+            tag__slug__in=legacy_slugs,
+        ).delete()
+
     qs = TaggedItem.objects.filter(
         content_type=content_type,
         object_id=obj.pk,
@@ -157,7 +173,7 @@ def _update_endpoint_metadata(session: EndpointSession) -> dict[str, Any]:
 
 def _ensure_base_objects(mode: str) -> dict[str, Any]:
     tag, _ = Tag.objects.get_or_create(
-        slug="proxmox2netbox",
+        slug=MANAGED_TAG_SLUG,
         defaults={
             "name": "Proxmox2NetBox",
             "color": "ff5722",

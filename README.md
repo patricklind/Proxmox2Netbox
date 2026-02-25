@@ -6,7 +6,7 @@ NetBox plugin for synchronizing Proxmox inventory data into NetBox (NetBox v4).
 
 - NetBox: `>=4.2.0, <5.0.0`
 - Python: `>=3.8`
-- Plugin package version in this repository: `1.0.1`
+- Plugin package version in this repository: `1.1.0`
 
 ## What Works (Current Runtime)
 
@@ -140,7 +140,11 @@ pytest
 - If the name is unavailable for your account, change `project.name` in `pyproject.toml` to a unique name before publishing.
 - Configure one of these publish methods:
 - Add `PYPI_API_TOKEN` as a repository secret in GitHub, or
-- Configure a matching Trusted Publisher in PyPI for this GitHub repository/workflow.
+- Configure a matching Trusted Publisher in PyPI for this GitHub repository/workflow:
+- Owner: `patricklind`
+- Repository: `Proxmox2Netbox`
+- Workflow file: `.github/workflows/publish-python-package.yml`
+- Environment name: `pypi`
 
 ### Local preflight
 
@@ -151,8 +155,16 @@ twine check dist/*
 
 ### Publish via GitHub Actions
 
-- Create a GitHub Release (or run the `Publish Python Package` workflow manually).
-- The workflow builds and uploads distributions to PyPI.
+- Bump `version` in `pyproject.toml` and `netbox_proxbox/__init__.py`.
+- Create and push a tag:
+
+```bash
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+- `release.yml` creates the GitHub Release from the tag.
+- `publish-python-package.yml` publishes to PyPI when that release is published.
 - After publish:
 
 ```bash

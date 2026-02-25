@@ -5,9 +5,9 @@ class Proxmox2NetBoxConfig(PluginConfig):
     name = "netbox_proxbox"
     verbose_name = "Proxmox2NetBox"
     description = "Integrates Proxmox and Netbox"
-    version = "1.0.1"
-    author = "Emerson Felipe (@emersonfelipesp)"
-    author_email = "emersonfelipe.2003@gmail.com"
+    version = "1.1.0"
+    author = "Patrick Wulff Lind"
+    author_email = "mail@patricklind.dk"
     # Keep a floor for supported NetBox features and avoid blocking newer 4.x releases.
     min_version = "4.2.0"
     max_version = "4.99.99"

@@ -1,10 +1,10 @@
 [project]
 name = "proxmox2netbox"
-version = "1.0.1"
+version = "1.1.0"
 description = "Netbox Plugin - Integrate Proxmox and Netbox"
 readme = "README.md"
 authors = [
-    {name = "Emerson Felipe", email = "emersonfelipe.2003@gmail.com"}
+    {name = "Patrick Wulff Lind", email = "mail@patricklind.dk"}
 ]
 license = "Apache-2.0"
 requires-python = ">=3.8"
