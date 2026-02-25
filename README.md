@@ -195,3 +195,8 @@ netbox_proxbox/
 
 This repository ships a NetBox plugin runtime only.  
 Legacy FastAPI/backend-service components are removed from runtime, docs, and packaging scope.
+
+## Wiki
+
+- GitHub Wiki URL: `https://github.com/patricklind/Proxmox2Netbox/wiki`
+- Wiki source files in this repository: `wiki/`
