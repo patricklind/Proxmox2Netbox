@@ -9,7 +9,7 @@ Replace the values with your own following the [Configuration Parameters](#2-con
 
 ```python
 PLUGINS_CONFIG = {
-    'netbox_proxbox': {
+    'proxmox2netbox': {
         'proxmox': [
             {
                 'domain': 'proxmox2netbox.example.com',    # May also be IP address

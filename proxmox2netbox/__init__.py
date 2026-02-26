@@ -1,10 +1,21 @@
-"""Public plugin module alias for NetBox PLUGINS configuration.
+from netbox.plugins import PluginConfig
 
-Use `PLUGINS = ["proxmox2netbox"]` in NetBox.
-The implementation lives in `netbox_proxbox` for backward compatibility.
-"""
 
-from netbox_proxbox import Proxmox2NetBoxConfig, config
+class Proxmox2NetBoxConfig(PluginConfig):
+    name = "proxmox2netbox"
+    verbose_name = "Proxmox2NetBox"
+    description = "Integrates Proxmox and Netbox"
+    version = "1.1.3"
+    author = "Patrick Wulff Lind"
+    author_email = "mail@patricklind.dk"
+    min_version = "4.2.0"
+    max_version = "4.99.99"
+    base_url = "proxmox2netbox"
+    required_settings = []
 
-__all__ = ["Proxmox2NetBoxConfig", "config"]
+    def ready(self):
+        super().ready()
+        from . import jobs  # noqa: F401
 
+
+config = Proxmox2NetBoxConfig

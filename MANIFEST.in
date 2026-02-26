@@ -5,5 +5,4 @@ include *.txt
 recursive-include development *.env
 recursive-include development *.py
 recursive-include development *.yml
-recursive-include netbox_proxbox *.py
 recursive-include proxmox2netbox *.py

@@ -24,18 +24,18 @@ Implemented sync flows:
 
 Core sync logic is consolidated in:
 
-- `netbox_proxbox/services/proxmox_sync.py`
+- `proxmox2netbox/services/proxmox_sync.py`
 
 Backward-compatible import shim (kept intentionally):
 
-- `netbox_proxbox/proxmox_sync.py`
+- `proxmox2netbox/proxmox_sync.py`
 
 Primary runtime entrypoints:
 
-- UI endpoints: `netbox_proxbox/views/sync.py`
-- Connection/status badge: `netbox_proxbox/views/keepalive_status.py`
-- Proxmox card data: `netbox_proxbox/views/cards.py`
-- Job wrapper: `netbox_proxbox/jobs.py` (`Proxmox2NetBoxSyncJob`)
+- UI endpoints: `proxmox2netbox/views/sync.py`
+- Connection/status badge: `proxmox2netbox/views/keepalive_status.py`
+- Proxmox card data: `proxmox2netbox/views/cards.py`
+- Job wrapper: `proxmox2netbox/jobs.py` (`Proxmox2NetBoxSyncJob`)
 
 ## Installation (NetBox v4)
 
@@ -96,8 +96,8 @@ In NetBox UI:
 Example from NetBox shell:
 
 ```python
-from netbox_proxbox.jobs import Proxmox2NetBoxSyncJob
-from netbox_proxbox.choices import SyncTypeChoices
+from proxmox2netbox.jobs import Proxmox2NetBoxSyncJob
+from proxmox2netbox.choices import SyncTypeChoices
 
 # Full sync
 Proxmox2NetBoxSyncJob.enqueue(sync_type=SyncTypeChoices.ALL)
@@ -119,8 +119,8 @@ Behavior note:
 ### Static checks
 
 ```bash
-ruff check netbox_proxbox --select F401,F403,F811,F821,F841,E712
-python -m compileall -q netbox_proxbox
+ruff check proxmox2netbox --select F401,F403,F811,F821,F841,E712
+python -m compileall -q proxmox2netbox
 ```
 
 ### Django checks (inside NetBox runtime)
@@ -181,7 +181,7 @@ pip install proxmox2netbox
 ## Repository Layout (Relevant Runtime Files)
 
 ```text
-netbox_proxbox/
+proxmox2netbox/
   __init__.py
   jobs.py
   models/

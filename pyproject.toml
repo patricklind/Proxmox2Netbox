@@ -68,7 +68,6 @@ exclude = [
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/netbox_proxbox",
     "/proxmox2netbox",
     "/README.md",
     "/CONTRIBUTING.md",
@@ -78,4 +77,4 @@ include = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["netbox_proxbox", "proxmox2netbox"]
+packages = ["proxmox2netbox"]
