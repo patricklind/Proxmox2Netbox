@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 MANAGED_TAG_SLUG = "proxmox2netbox"
 LEGACY_MANAGED_TAG_SLUGS = (
     "proxbox",
-    "netbox-proxbox",
+    "proxmox2netbox",
     "proxmox2netbox-plugin",
 )
 

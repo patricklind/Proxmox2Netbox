@@ -5,7 +5,7 @@ from django.db.models import Count, Min
 MANAGED_TAG_SLUG = "proxmox2netbox"
 LEGACY_TAG_SLUGS = (
     "proxbox",
-    "netbox-proxbox",
+    "proxmox2netbox",
     "proxmox2netbox-plugin",
 )
 
