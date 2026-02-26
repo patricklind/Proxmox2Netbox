@@ -29,7 +29,7 @@ This project is plugin-only:
 ## Quick Start
 
 1. Install the package in NetBox venv: `pip install proxmox2netbox`
-2. Enable plugin in NetBox config: `PLUGINS = ["netbox_proxbox"]`
+2. Enable plugin in NetBox config: `PLUGINS = ["proxmox2netbox"]`
 3. Run migrations/static collection.
 4. Add at least one Proxmox endpoint in plugin UI.
 5. Run sync from plugin home page or queue the NetBox job.

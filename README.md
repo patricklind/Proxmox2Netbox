@@ -59,13 +59,13 @@ proxmox2netbox==1.1.0
 In NetBox `configuration.py`:
 
 ```python
-PLUGINS = ["netbox_proxbox"]
+PLUGINS = ["proxmox2netbox"]
 ```
 
 ### 3. Run migrations/static
 
 ```bash
-python manage.py migrate netbox_proxbox
+python manage.py migrate
 python manage.py collectstatic --no-input
 ```
 
@@ -162,7 +162,7 @@ twine check dist/*
 
 ### Publish via GitHub Actions
 
-- Bump `version` in `pyproject.toml` and `netbox_proxbox/__init__.py`.
+- Bump `version` in `pyproject.toml` and plugin config version in source.
 - Create and push a tag:
 
 ```bash

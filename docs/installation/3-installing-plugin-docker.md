@@ -15,7 +15,7 @@ proxmox2netbox==1.1.0
 In NetBox config (`plugins.py` or `configuration.py` depending on your setup):
 
 ```python
-PLUGINS = ["netbox_proxbox"]
+PLUGINS = ["proxmox2netbox"]
 ```
 
 ## 3. Rebuild/restart and run migrations
@@ -23,7 +23,7 @@ PLUGINS = ["netbox_proxbox"]
 After container rebuild/start, run:
 
 ```bash
-python3 manage.py migrate netbox_proxbox
+python3 manage.py migrate
 python3 manage.py collectstatic --no-input
 ```
 

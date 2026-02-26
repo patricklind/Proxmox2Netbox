@@ -25,14 +25,14 @@ pip install .
 Edit `/opt/netbox/netbox/netbox/configuration.py`:
 
 ```python
-PLUGINS = ['netbox_proxbox']
+PLUGINS = ["proxmox2netbox"]
 ```
 
 ## 5. Run migrations and collect static files
 
 ```bash
 cd /opt/netbox/netbox/
-python3 manage.py migrate netbox_proxbox
+python3 manage.py migrate
 python3 manage.py collectstatic --no-input
 ```
 

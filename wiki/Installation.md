@@ -17,13 +17,13 @@ proxmox2netbox==1.1.0
 Add to `configuration.py`:
 
 ```python
-PLUGINS = ["netbox_proxbox"]
+PLUGINS = ["proxmox2netbox"]
 ```
 
 ## Apply plugin migration and static
 
 ```bash
-python manage.py migrate netbox_proxbox
+python manage.py migrate
 python manage.py collectstatic --no-input
 ```
 

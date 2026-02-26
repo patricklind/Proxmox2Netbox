@@ -6,7 +6,7 @@
 2. Verify migrations:
 
 ```bash
-python manage.py showmigrations netbox_proxbox
+python manage.py showmigrations
 ```
 
 3. Validate plugin config:

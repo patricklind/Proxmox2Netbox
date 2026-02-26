@@ -5,7 +5,7 @@
 Update both:
 
 - `pyproject.toml` -> `[project].version`
-- `netbox_proxbox/__init__.py` -> plugin `version`
+- plugin source config -> plugin `version`
 
 ## Trusted Publisher (OIDC)
 

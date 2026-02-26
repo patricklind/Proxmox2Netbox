@@ -21,4 +21,4 @@ Proxmox2NetBox is a NetBox v4 plugin for synchronizing Proxmox inventory data in
 - NetBox: `>=4.2.0, <5.0.0`
 - Python: `>=3.8`
 - Package: `proxmox2netbox`
-- Plugin module name in NetBox: `netbox_proxbox`
+- Plugin module name in NetBox: `proxmox2netbox`
