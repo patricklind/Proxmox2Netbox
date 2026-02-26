@@ -1,16 +1,41 @@
 [project]
 name = "proxmox2netbox"
-version = "1.1.0"
-description = "Netbox Plugin - Integrate Proxmox and Netbox"
+version = "1.1.1"
+description = "NetBox plugin for synchronizing Proxmox inventory data"
 readme = "README.md"
 authors = [
     {name = "Patrick Wulff Lind", email = "mail@patricklind.dk"}
 ]
 license = "Apache-2.0"
 requires-python = ">=3.8"
+keywords = ["netbox", "proxmox", "plugin", "dcim", "virtualization"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Django",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 5",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Internet :: WWW/HTTP",
+]
 dependencies = [
     "proxmoxer>=2.2.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/patricklind/Proxmox2Netbox"
+Documentation = "https://github.com/patricklind/Proxmox2Netbox/wiki"
+Repository = "https://github.com/patricklind/Proxmox2Netbox"
+Issues = "https://github.com/patricklind/Proxmox2Netbox/issues"
+Changelog = "https://github.com/patricklind/Proxmox2Netbox/releases"
 
 [project.optional-dependencies]
 dev = [
