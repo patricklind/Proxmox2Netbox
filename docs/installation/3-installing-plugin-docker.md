@@ -1,11 +1,26 @@
 # Installing the Plugin using Docker
 
-Docker install instructions for this repository are not finalized yet.
+For `netbox-docker`, install this plugin through the requirements mechanism so it survives rebuilds.
 
-Current recommendation:
+## 1. Add package to local requirements
 
-- Install through NetBox container shell with `pip install proxmox2netbox`, or
-- Build your own image that includes this plugin, then run:
+Add this line to your `local_requirements.txt` used by your deployment:
+
+```text
+proxmox2netbox==1.1.0
+```
+
+## 2. Enable plugin
+
+In NetBox config (`plugins.py` or `configuration.py` depending on your setup):
+
+```python
+PLUGINS = ["netbox_proxbox"]
+```
+
+## 3. Rebuild/restart and run migrations
+
+After container rebuild/start, run:
 
 ```bash
 python3 manage.py migrate netbox_proxbox

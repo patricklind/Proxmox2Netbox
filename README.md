@@ -47,6 +47,13 @@ Inside NetBox environment:
 pip install proxmox2netbox
 ```
 
+If you run `netbox-docker`, also pin the package in your Docker requirements file so it survives rebuilds/redeploys:
+
+```text
+# local_requirements.txt
+proxmox2netbox==1.1.0
+```
+
 ### 2. Enable plugin
 
 In NetBox `configuration.py`:
