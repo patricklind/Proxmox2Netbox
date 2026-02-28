@@ -210,7 +210,6 @@ def _ensure_base_objects(mode, site=None):
     }
 
 def _upsert_cluster(cluster_name, cluster_type, tag, site=None):
-    from django.contrib.contenttypes.models import ContentType as _CT
     cluster = Cluster.objects.filter(name=cluster_name).order_by('pk').first()
     if cluster is None:
         create_kwargs = {'name': cluster_name, 'type': cluster_type}
@@ -309,6 +308,7 @@ def _fetch_vm_config(client, node, vm_type, vmid):
             return client.nodes(node).lxc(vmid).config.get() or {}
         return client.nodes(node).qemu(vmid).config.get() or {}
     except Exception:
+        logger.warning('Failed to fetch config for %s %s on node %s', vm_type, vmid, node)
         return {}
 
 def _extract_vm_config_disks(vm_type, config):
@@ -384,6 +384,7 @@ def _try_agent_ips(client, node, vmid):
                     pass
         return ips
     except Exception:
+        logger.debug('Guest agent not available for qemu %s on node %s', vmid, node)
         return []
 
 
@@ -598,6 +599,7 @@ def _sync_vms(session, cluster, base):
                 else:
                     vms_raw = client.nodes(node_name).qemu.get() or []
             except Exception:
+                logger.warning('Failed to fetch %s list from node %s', vm_type, node_name)
                 continue
             for vm_data in vms_raw:
                 vmid = vm_data.get('vmid')

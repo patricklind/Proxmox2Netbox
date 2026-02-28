@@ -24,8 +24,8 @@ def get_service_status(
     if service == "proxmox":
         try:
             endpoint = ProxmoxEndpoint.objects.get(pk=pk)
-            connected, _ = check_endpoint_connection(endpoint)
-            status = "success" if connected else "error"
+            result = check_endpoint_connection(endpoint)
+            status = "success" if result.get('ok') else "error"
         except ProxmoxEndpoint.DoesNotExist:
             status = "error"
 
