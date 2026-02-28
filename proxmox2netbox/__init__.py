@@ -5,7 +5,7 @@ class Proxmox2NetBoxConfig(PluginConfig):
     name = "proxmox2netbox"
     verbose_name = "Proxmox2NetBox"
     description = "Integrates Proxmox and Netbox"
-    version = "1.2.4"
+    version = "1.2.5"
     author = "Patrick Wulff Lind"
     author_email = "mail@patricklind.dk"
     min_version = "4.2.0"

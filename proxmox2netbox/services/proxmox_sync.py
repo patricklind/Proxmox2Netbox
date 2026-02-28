@@ -335,11 +335,16 @@ def _extract_vm_config_disks(vm_type, config):
 
 
 def _extract_interface_ips(config, vm_type):
-    ips = []
+    """Return {net_idx: [ip_string, ...]} — one entry per configured interface."""
+    result = {}
     if vm_type == 'lxc':
+        # LXC: IPs are inline in the net<N> key itself (e.g. net0=...,ip=10.0.0.5/24,...)
         for key, value in config.items():
-            if not re.match(r'^net\d+$', key):
+            m = re.match(r'^net(\d+)$', key)
+            if not m:
                 continue
+            idx = int(m.group(1))
+            ips = []
             for token in str(value).split(','):
                 token = token.strip()
                 low = token.lower()
@@ -347,10 +352,16 @@ def _extract_interface_ips(config, vm_type):
                     addr = token.split('=', 1)[1].strip()
                     if addr and addr not in ('dhcp', 'auto', 'manual'):
                         ips.append(addr)
+            if ips:
+                result[idx] = ips
     else:
+        # QEMU: IPs are in ipconfig<N> keys that map 1:1 to net<N>
         for key, value in config.items():
-            if not re.match(r'^ipconfig\d+$', key):
+            m = re.match(r'^ipconfig(\d+)$', key)
+            if not m:
                 continue
+            idx = int(m.group(1))
+            ips = []
             for token in str(value).split(','):
                 token = token.strip()
                 low = token.lower()
@@ -358,19 +369,30 @@ def _extract_interface_ips(config, vm_type):
                     addr = token.split('=', 1)[1].strip()
                     if addr and addr not in ('dhcp', 'auto'):
                         ips.append(addr)
-    return ips
+            if ips:
+                result[idx] = ips
+    return result
 
 
-def _try_agent_ips(client, node, vmid):
+def _try_agent_ips_by_mac(client, node, vmid):
+    """Return {MAC_UPPER: [ip_string, ...]} from the QEMU guest agent.
+
+    Keying by MAC lets the caller match agent-reported interfaces to
+    the correct Proxmox net<N> entry without relying on interface names
+    (which differ between guest OS and Proxmox config).
+    """
     try:
         ifaces = client.nodes(node).qemu(vmid).agent('network-get-interfaces').get()
         if not ifaces:
-            return []
-        result = ifaces.get('result') or []
-        ips = []
-        for iface in result:
+            return {}
+        by_mac = {}
+        for iface in (ifaces.get('result') or []):
             if (iface.get('name') or '').lower() in ('lo', 'loopback'):
                 continue
+            mac = (iface.get('hardware-address') or '').upper().strip()
+            if not mac:
+                continue
+            ips = []
             for ip_info in (iface.get('ip-addresses') or []):
                 addr = ip_info.get('ip-address', '')
                 prefix_len = ip_info.get('prefix', '')
@@ -383,10 +405,12 @@ def _try_agent_ips(client, node, vmid):
                     ips.append(str(net))
                 except ValueError:
                     pass
-        return ips
+            if ips:
+                by_mac[mac] = ips
+        return by_mac
     except Exception:
         logger.debug('Guest agent not available for qemu %s on node %s', vmid, node)
-        return []
+        return {}
 
 
 def _sync_iface_ips(vm, iface, ip_strings, vrf=None):
@@ -447,7 +471,12 @@ def _sync_iface_mac(iface, mac):
 
 
 def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_type=None, config=None, vrf=None):
-    config_ips = _extract_interface_ips(config or {}, vm_type or 'qemu')
+    # Per-interface IPs from Proxmox config (idx → [ip, ...])
+    config_ips_by_idx = _extract_interface_ips(config or {}, vm_type or 'qemu')
+
+    # Agent IPs fetched once lazily and keyed by MAC for correct matching
+    agent_ips_by_mac = None
+
     existing = {iface.name: iface for iface in VMInterface.objects.filter(virtual_machine=vm)}
     seen_names = set()
     primary_ip_candidates = []
@@ -472,13 +501,19 @@ def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_t
         _sync_iface_mac(iface, mac)
         _safe_add_tag(iface, tag)
         seen_names.add(name)
-        if idx == 0:
-            ip_strs = config_ips
-            if not ip_strs and vm_type == 'qemu' and client and node and vmid:
-                ip_strs = _try_agent_ips(client, node, vmid)
-            if ip_strs:
-                _sync_iface_ips(vm, iface, ip_strs, vrf=vrf)
-                primary_ip_candidates.extend(ip_strs)
+
+        # IPs for THIS interface from config
+        ip_strs = config_ips_by_idx.get(idx, [])
+
+        # Fallback: QEMU guest agent — match by MAC so IPs go to the right interface
+        if not ip_strs and vm_type == 'qemu' and client and node and vmid and mac:
+            if agent_ips_by_mac is None:
+                agent_ips_by_mac = _try_agent_ips_by_mac(client, node, vmid)
+            ip_strs = agent_ips_by_mac.get(mac, [])
+
+        if ip_strs:
+            _sync_iface_ips(vm, iface, ip_strs, vrf=vrf)
+            primary_ip_candidates.extend(ip_strs)
     for name, iface in existing.items():
         if name not in seen_names:
             iface.delete()
