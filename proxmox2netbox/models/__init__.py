@@ -117,6 +117,15 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
         blank=True,
         help_text=_('VRF to assign synced IP addresses to. If not set, the global routing table is used.'),
     )
+    netbox_device_type = models.ForeignKey(
+        to='dcim.DeviceType',
+        on_delete=models.SET_NULL,
+        related_name='+',
+        verbose_name=_('Node Device Type'),
+        null=True,
+        blank=True,
+        help_text=_('Device type to assign to synced Proxmox nodes. If not set, one is auto-detected from the node\'s CPU model or a generic "Proxmox Node" type is used.'),
+    )
 
     class Meta:
         verbose_name_plural: str = "Proxmox Endpoints"

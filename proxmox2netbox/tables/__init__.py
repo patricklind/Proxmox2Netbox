@@ -52,15 +52,17 @@ class ProxmoxEndpointTable(NetBoxTable):
     ip_address = tables.Column(linkify=True)
     mode = ChoiceFieldColumn()
     verify_ssl = BooleanColumn()
-    
+    netbox_site = tables.Column(linkify=True, verbose_name=_('Site'))
+    netbox_device_type = tables.Column(linkify=True, verbose_name=_('Node Device Type'))
+
     class Meta(NetBoxTable.Meta):
         model = ProxmoxEndpoint
         fields = (
             'pk', 'id', 'name', 'domain', 'ip_address', 'port',
             'mode', 'version', 'repoid', 'username', 'token_name',
-            'verify_ssl', 'actions',
+            'verify_ssl', 'netbox_site', 'netbox_device_type', 'actions',
         )
-        
+
         default_columns = (
             'pk', 'name', 'domain', 'ip_address', 'port', 'mode',
             'version', 'verify_ssl'

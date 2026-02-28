@@ -16,10 +16,16 @@
                         <tr>
                             <th scope="row">IP Address</th>
                             <td>
-                                <a href="{{ object.ip_address.get_absolute_url }}">
-                                    {{ object.ip_address }}
-                                </a>
+                                {% if object.ip_address %}
+                                    <a href="{{ object.ip_address.get_absolute_url }}">{{ object.ip_address }}</a>
+                                {% else %}
+                                    &mdash;
+                                {% endif %}
                             </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Domain</th>
+                            <td>{{ object.domain|default:"&mdash;" }}</td>
                         </tr>
                         <tr>
                             <th scope="row">Port</th>
@@ -32,6 +38,40 @@
                         <tr>
                             <th scope="row">Mode</th>
                             <td>{{ object.mode }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Version</th>
+                            <td>{{ object.version|default:"&mdash;" }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Site</th>
+                            <td>
+                                {% if object.netbox_site %}
+                                    <a href="{{ object.netbox_site.get_absolute_url }}">{{ object.netbox_site }}</a>
+                                {% else %}
+                                    <span class="text-muted">Default (auto)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">VRF</th>
+                            <td>
+                                {% if object.netbox_vrf %}
+                                    <a href="{{ object.netbox_vrf.get_absolute_url }}">{{ object.netbox_vrf }}</a>
+                                {% else %}
+                                    <span class="text-muted">Global routing table</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Node Device Type</th>
+                            <td>
+                                {% if object.netbox_device_type %}
+                                    <a href="{{ object.netbox_device_type.get_absolute_url }}">{{ object.netbox_device_type }}</a>
+                                {% else %}
+                                    <span class="text-muted">Generic (Proxmox Node)</span>
+                                {% endif %}
+                            </td>
                         </tr>
                     </table>
                 </div>

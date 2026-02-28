@@ -4,7 +4,7 @@ from django import forms
 # NetBox Imports
 from netbox.forms import NetBoxModelForm, NetBoxModelFilterSetForm
 from utilities.forms.fields import CommentField, DynamicModelChoiceField
-from dcim.models import Site
+from dcim.models import DeviceType, Site
 from ipam.models import IPAddress, VRF
 from django.utils.translation import gettext as _
 
@@ -46,6 +46,12 @@ class ProxmoxEndpointForm(NetBoxModelForm):
         label=_('NetBox VRF'),
         required=False,
     )
+    netbox_device_type = DynamicModelChoiceField(
+        queryset=DeviceType.objects.all(),
+        help_text=_('Device type for synced Proxmox nodes. If not set, one is auto-detected from CPU model or a generic type is used.'),
+        label=_('Node Device Type'),
+        required=False,
+    )
     comments = CommentField()
 
     def clean(self):
@@ -76,7 +82,7 @@ class ProxmoxEndpointForm(NetBoxModelForm):
         fields = (
             'name', 'ip_address', 'domain', 'port', 'username',
             'password', 'token_name', 'token_value', 'verify_ssl',
-            'netbox_site', 'netbox_vrf',
+            'netbox_site', 'netbox_vrf', 'netbox_device_type',
             'tags'
         )
 

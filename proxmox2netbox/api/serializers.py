@@ -78,7 +78,8 @@ class ProxmoxEndpointSerializer(NetBoxModelSerializer):
         fields = (
             'id', 'url', 'display', 'name', 'ip_address', 'domain', 'port',
             'token_name', 'token_value', 'username', 'password', 'verify_ssl',
-            'mode', 'version', 'repoid', 
+            'mode', 'version', 'repoid',
+            'netbox_site', 'netbox_vrf', 'netbox_device_type',
             'tags', 'custom_fields', 'created', 'last_updated',
         )
 

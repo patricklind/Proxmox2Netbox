@@ -160,7 +160,7 @@ def _update_endpoint_metadata(session):
         'nodes': nodes,
     }
 
-def _ensure_base_objects(mode, site=None):
+def _ensure_base_objects(mode, site=None, device_type=None):
     tag, _ = Tag.objects.get_or_create(
         slug=MANAGED_TAG_SLUG,
         defaults={
@@ -169,14 +169,15 @@ def _ensure_base_objects(mode, site=None):
             'description': 'Objects managed by proxmox2netbox',
         },
     )
-    manufacturer, _ = Manufacturer.objects.get_or_create(
-        slug='proxmox',
-        defaults={'name': 'Proxmox'},
-    )
-    device_type, _ = DeviceType.objects.get_or_create(
-        slug='proxmox-node',
-        defaults={'manufacturer': manufacturer, 'model': 'Proxmox Node'},
-    )
+    if device_type is None:
+        manufacturer, _ = Manufacturer.objects.get_or_create(
+            slug='proxmox',
+            defaults={'name': 'Proxmox'},
+        )
+        device_type, _ = DeviceType.objects.get_or_create(
+            slug='proxmox-node',
+            defaults={'manufacturer': manufacturer, 'model': 'Proxmox Node'},
+        )
     if site is None:
         site, _ = Site.objects.get_or_create(
             slug='proxmox2netbox',
@@ -663,7 +664,8 @@ def _upsert_all_for_session(session, sync_type):
     mode = meta['mode']
     cluster_name = meta['name'] or str(endpoint)
     netbox_site = getattr(endpoint, 'netbox_site', None)
-    base = _ensure_base_objects(mode, site=netbox_site)
+    netbox_device_type = getattr(endpoint, 'netbox_device_type', None)
+    base = _ensure_base_objects(mode, site=netbox_site, device_type=netbox_device_type)
     cluster = _upsert_cluster(cluster_name, base['cluster_type'], base['tag'], site=base['site'] if netbox_site is None else netbox_site)
     if sync_type in (SyncTypeChoices.ALL, SyncTypeChoices.DEVICES):
         _sync_nodes(session, cluster, base)
