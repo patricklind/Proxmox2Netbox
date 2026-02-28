@@ -118,7 +118,7 @@ def connect_endpoint(endpoint):
 
 
 def _cluster_status_data(client):
-    status_rows = client.cluster.status.get()
+    status_rows = client.cluster.status.get() or []
     nodes = [row for row in status_rows if row.get('type') == 'node']
     cluster_row = next((row for row in status_rows if row.get('type') == 'cluster'), None)
     if cluster_row:
@@ -661,7 +661,7 @@ def _upsert_all_for_session(session, sync_type):
     endpoint = session.endpoint
     meta = _update_endpoint_metadata(session)
     mode = meta['mode']
-    cluster_name = meta['name']
+    cluster_name = meta['name'] or str(endpoint)
     netbox_site = getattr(endpoint, 'netbox_site', None)
     base = _ensure_base_objects(mode, site=netbox_site)
     cluster = _upsert_cluster(cluster_name, base['cluster_type'], base['tag'], site=base['site'] if netbox_site is None else netbox_site)

@@ -62,11 +62,9 @@ class ProxmoxEndpointForm(NetBoxModelForm):
         if not password:
             if token_name and not token_value:
                 self.add_error('token_value', _('Token Value is required when Token Name is set.'))
-
-            if token_value and not token_name:
+            elif token_value and not token_name:
                 self.add_error('token_name', _('Token Name is required when Token Value is set.'))
-
-            if not (token_name and token_value):
+            elif not (token_name and token_value):
                 raise forms.ValidationError(
                     _('Provide either username/password or username with both Token Name and Token Value.')
                 )

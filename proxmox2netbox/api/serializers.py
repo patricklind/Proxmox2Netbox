@@ -55,7 +55,7 @@ class SyncProcessSerializer(NetBoxModelSerializer):
     sync_type = serializers.ChoiceField(choices=SyncTypeChoices)
     status = serializers.ChoiceField(choices=SyncStatusChoices)
     runtime = serializers.FloatField(required=False, allow_null=True)
-    started_at = serializers.DateTimeField()
+    started_at = serializers.DateTimeField(required=False, allow_null=True)
     completed_at = serializers.DateTimeField(required=False, allow_null=True)
     tags = TagSerializer(many=True, required=False, nested=True)
     
