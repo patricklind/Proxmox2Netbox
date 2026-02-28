@@ -169,6 +169,7 @@ def _ensure_base_objects(mode, site=None, device_type=None):
             'description': 'Objects managed by proxmox2netbox',
         },
     )
+    manufacturer = None
     if device_type is None:
         manufacturer, _ = Manufacturer.objects.get_or_create(
             slug='proxmox',
@@ -511,8 +512,8 @@ def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_t
                 agent_ips_by_mac = _try_agent_ips_by_mac(client, node, vmid)
             ip_strs = agent_ips_by_mac.get(mac, [])
 
+        _sync_iface_ips(vm, iface, ip_strs, vrf=vrf)
         if ip_strs:
-            _sync_iface_ips(vm, iface, ip_strs, vrf=vrf)
             primary_ip_candidates.extend(ip_strs)
     for name, iface in existing.items():
         if name not in seen_names:
