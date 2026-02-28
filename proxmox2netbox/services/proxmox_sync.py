@@ -7,7 +7,7 @@ from typing import Any
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
-from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site
+from dcim.models import Device, DeviceRole, DeviceType, MACAddress, Manufacturer, Site
 from ipam.models import IPAddress
 from extras.models.tags import Tag, TaggedItem
 from virtualization.models import Cluster, ClusterType, VirtualDisk, VMInterface, VirtualMachine
@@ -210,20 +210,22 @@ def _ensure_base_objects(mode, site=None):
     }
 
 def _upsert_cluster(cluster_name, cluster_type, tag, site=None):
+    from django.contrib.contenttypes.models import ContentType as _CT
     cluster = Cluster.objects.filter(name=cluster_name).order_by('pk').first()
     if cluster is None:
         create_kwargs = {'name': cluster_name, 'type': cluster_type}
         if site is not None:
-            create_kwargs['site'] = site
+            create_kwargs['scope'] = site
         cluster = Cluster.objects.create(**create_kwargs)
     else:
         update_fields = []
         if not cluster.type_id == cluster_type.id:
             cluster.type = cluster_type
             update_fields.append('type')
-        if site is not None and not cluster.site_id == site.id:
-            cluster.site = site
-            update_fields.append('site')
+        if site is not None and not cluster.scope_id == site.id:
+            cluster.scope = site
+            update_fields.append('scope_type')
+            update_fields.append('scope_id')
         if update_fields:
             cluster.save(update_fields=update_fields)
     _safe_add_tag(cluster, tag)
@@ -421,9 +423,29 @@ def _sync_iface_ips(vm, iface, ip_strings, vrf=None):
             ip.delete()
 
 
+def _sync_iface_mac(iface, mac):
+    if not mac:
+        return
+    iface_ct = ContentType.objects.get_for_model(VMInterface)
+    existing = MACAddress.objects.filter(
+        assigned_object_type=iface_ct,
+        assigned_object_id=iface.pk,
+    ).order_by('pk').first()
+    if existing is None:
+        mac_obj = MACAddress.objects.create(
+            mac_address=mac,
+            assigned_object_type=iface_ct,
+            assigned_object_id=iface.pk,
+        )
+        iface.primary_mac_address = mac_obj
+        iface.save(update_fields=['primary_mac_address'])
+    elif not str(existing.mac_address).upper() == mac:
+        existing.mac_address = mac
+        existing.save(update_fields=['mac_address'])
+
+
 def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_type=None, config=None, vrf=None):
     config_ips = _extract_interface_ips(config or {}, vm_type or 'qemu')
-    content_type = ContentType.objects.get_for_model(VirtualMachine)
     existing = {iface.name: iface for iface in VMInterface.objects.filter(virtual_machine=vm)}
     seen_names = set()
     primary_ip_candidates = []
@@ -436,20 +458,16 @@ def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_t
             iface = VMInterface.objects.create(
                 virtual_machine=vm,
                 name=name,
-                mac_address=mac,
                 description=desc,
             )
         else:
             update_fields = []
-            current_mac = str(iface.mac_address or '').upper()
-            if mac and not current_mac == mac:
-                iface.mac_address = mac
-                update_fields.append('mac_address')
             if not iface.description == desc:
                 iface.description = desc
                 update_fields.append('description')
             if update_fields:
                 iface.save(update_fields=update_fields)
+        _sync_iface_mac(iface, mac)
         _safe_add_tag(iface, tag)
         seen_names.add(name)
         if idx == 0:
