@@ -6,7 +6,7 @@ NetBox plugin for synchronizing Proxmox inventory data into NetBox (NetBox v4).
 
 - NetBox: `>=4.2.0, <5.0.0`
 - Python: `>=3.8`
-- Plugin package version in this repository: `1.1.4`
+- Plugin package version in this repository: `1.2.6`
 
 ## What Works (Current Runtime)
 
@@ -14,11 +14,16 @@ Out-of-the-box sync requires only a configured **Proxmox Endpoint** in NetBox.
 
 Implemented sync flows:
 
-- Proxmox nodes -> NetBox `dcim.Device`
-- Proxmox QEMU/LXC VMs -> NetBox `virtualization.VirtualMachine`
-- VM interfaces from Proxmox config -> NetBox `virtualization.VMInterface`
+- Proxmox nodes → NetBox `dcim.Device`
+- Proxmox QEMU/LXC VMs → NetBox `virtualization.VirtualMachine`
+- VM interfaces from Proxmox config → NetBox `virtualization.VMInterface`, with per-interface IP assignment
+- QEMU guest-agent IPs as fallback when static config lacks IPs (MAC-based interface matching)
+- Endpoint-level **Site** and **VRF** mapping — devices and IPs are placed in the correct NetBox Site/VRF
+- Endpoint-level **Node Device Type** — select a real NetBox DeviceType (e.g. Dell PowerEdge R740) for synced nodes; falls back to generic *Proxmox Node* type
+- **Per-node Device Type Mapping** — override device type per individual node name via *Node Type Mappings* UI (`Plugins → Proxmox2NetBox → Configuration → Node Type Mappings`)
 - Endpoint metadata refresh (`mode`, `version`, `repoid`, cluster name)
 - Sync process tracking in `SyncProcess`
+- Stale IP cleanup — IPs removed from Proxmox config are removed from NetBox interfaces
 
 ## Runtime Architecture (Source of Truth)
 
@@ -51,7 +56,7 @@ If you run `netbox-docker`, also pin the package in your Docker requirements fil
 
 ```text
 # local_requirements.txt
-proxmox2netbox==1.1.4
+proxmox2netbox==1.2.6
 ```
 
 ### 2. Enable plugin
@@ -184,18 +189,34 @@ pip install proxmox2netbox
 proxmox2netbox/
   __init__.py
   jobs.py
+  choices.py
+  filtersets.py
+  navigation.py
   models/
+    __init__.py              # ProxmoxEndpoint, ProxmoxNodeTypeMapping, SyncProcess
   services/
-    proxmox_sync.py
-  proxmox_sync.py          # compatibility shim
+    proxmox_sync.py          # Core sync logic (nodes, VMs, interfaces, IPs)
+  proxmox_sync.py            # Backward-compat import shim
   views/
+    __init__.py
     sync.py
     keepalive_status.py
     cards.py
-  urls.py
+    node_type_mapping.py     # CRUD views for ProxmoxNodeTypeMapping
   forms/
-  filtersets.py
+    __init__.py
+    proxmox.py               # Endpoint + NodeTypeMapping forms
   tables/
+    __init__.py
+  api/
+    serializers.py           # Exposes netbox_site, netbox_vrf, netbox_device_type
+  migrations/
+    0001_initial.py … 0016_proxmoxnodetypemapping_fix.py
+  templates/
+    proxmox2netbox/
+      proxmoxendpoint.html
+      proxmoxnodetypemapping.html
+  urls.py
 ```
 
 ## Scope
