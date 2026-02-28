@@ -14,7 +14,7 @@ class CommonProperties:
     @property
     def ip(self) -> str:
         """Get the IP address of the Proxmox endpoint."""
-        return self.ip_address.address.split('/')[0] if self.ip_address else None
+        return str(self.ip_address.address).split('/')[0] if self.ip_address else None
     
     @property
     def url(self) -> str:
