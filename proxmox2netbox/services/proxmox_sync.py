@@ -1,5 +1,5 @@
+import ipaddress as _ipaddress
 import logging
-import math
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -8,26 +8,32 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site
+from ipam.models import IPAddress
 from extras.models.tags import Tag, TaggedItem
 from virtualization.models import Cluster, ClusterType, VirtualDisk, VMInterface, VirtualMachine
 
 from proxmoxer import ProxmoxAPI
 
 from proxmox2netbox.choices import ProxmoxModeChoices, SyncStatusChoices, SyncTypeChoices
-from proxmox2netbox.models import ProxmoxEndpoint, SyncProcess
+from proxmox2netbox.models import ProxmoxEndpoint
 
 logger = logging.getLogger(__name__)
 
-MANAGED_TAG_SLUG = "proxmox2netbox"
+MANAGED_TAG_SLUG = 'proxmox2netbox'
 LEGACY_MANAGED_TAG_SLUGS = (
-    "proxbox",
-    "proxmox2netbox",
-    "proxmox2netbox-plugin",
+    'proxbox',
+    'proxmox2netbox',
+    'proxmox2netbox-plugin',
 )
+
+_QEMU_NIC_MODELS = frozenset({
+    'virtio', 'e1000', 'e1000e', 'rtl8139', 'vmxnet3',
+    'ne2k_pci', 'ne2k_isa', 'pcnet', 'i82551', 'i82557b', 'i82559er',
+})
 
 
 class ProxmoxSyncError(Exception):
-    """Raised when Proxmox synchronization fails."""
+    pass
 
 
 @dataclass
@@ -37,71 +43,61 @@ class EndpointSession:
     host: str
     version: dict = field(default_factory=dict)
 
-
-def _safe_add_tag(obj: Any, tag: Tag) -> None:
+def _safe_add_tag(obj, tag):
     if obj.pk is None:
         return
     content_type = ContentType.objects.get_for_model(obj, for_concrete_model=False)
-    # Keep only the canonical managed tag on synchronized objects.
-    legacy_slugs = [slug for slug in LEGACY_MANAGED_TAG_SLUGS if slug != tag.slug]
+    legacy_slugs = [slug for slug in LEGACY_MANAGED_TAG_SLUGS if not slug == tag.slug]
     if legacy_slugs:
         TaggedItem.objects.filter(
             content_type=content_type,
             object_id=obj.pk,
             tag__slug__in=legacy_slugs,
         ).delete()
-
     qs = TaggedItem.objects.filter(
         content_type=content_type,
         object_id=obj.pk,
         tag=tag,
-    ).order_by("pk")
+    ).order_by('pk')
     first = qs.first()
     if first is not None:
-        duplicate_qs = qs.exclude(pk=first.pk)
-        if duplicate_qs.exists():
-            duplicate_qs.delete()
+        qs.exclude(pk=first.pk).delete()
         return
     TaggedItem.objects.create(content_type=content_type, object_id=obj.pk, tag=tag)
 
 
-def _endpoint_hosts(endpoint: ProxmoxEndpoint) -> list[str]:
-    hosts: list[str] = []
+def _endpoint_hosts(endpoint):
+    hosts = []
     if endpoint.domain:
         hosts.append(endpoint.domain.strip())
     if endpoint.ip_address:
-        hosts.append(str(endpoint.ip_address.address).split("/")[0])
-    # Keep order and remove empty/duplicates
-    return list(dict.fromkeys([host for host in hosts if host]))
+        hosts.append(str(endpoint.ip_address.address).split('/')[0])
+    return list(dict.fromkeys([h for h in hosts if h]))
 
 
-def _auth_options(endpoint: ProxmoxEndpoint) -> list[tuple[str, dict[str, str]]]:
-    options: list[tuple[str, dict[str, str]]] = []
-    token_name = (endpoint.token_name or "").strip()
-    token_value = (endpoint.token_value or "").strip()
-    password = (endpoint.password or "").strip()
-
+def _auth_options(endpoint):
+    options = []
+    token_name = (endpoint.token_name or '').strip()
+    token_value = (endpoint.token_value or '').strip()
+    password = (endpoint.password or '').strip()
     if token_name and token_value:
-        options.append(("token", {"token_name": token_name, "token_value": token_value}))
+        options.append(('token', {'token_name': token_name, 'token_value': token_value}))
     if password:
-        options.append(("password", {"password": password}))
+        options.append(('password', {'password': password}))
     if not options:
         raise ProxmoxSyncError(
-            f"Endpoint '{endpoint}' has no usable credentials. Provide password or token name/value."
+            'Endpoint ' + str(endpoint) + ' has no usable credentials. Provide password or token name/value.'
         )
     return options
 
-
-def connect_endpoint(endpoint: ProxmoxEndpoint) -> EndpointSession:
+def connect_endpoint(endpoint):
     hosts = _endpoint_hosts(endpoint)
     if not hosts:
         raise ProxmoxSyncError(
-            f"Endpoint '{endpoint}' has neither domain nor IP address configured."
+            'Endpoint ' + str(endpoint) + ' has neither domain nor IP address configured.'
         )
-
     auth_options = _auth_options(endpoint)
-    connection_errors: list[str] = []
-
+    connection_errors = []
     for host in hosts:
         for auth_type, auth_kwargs in auth_options:
             try:
@@ -114,556 +110,598 @@ def connect_endpoint(endpoint: ProxmoxEndpoint) -> EndpointSession:
                 )
                 version = client.version.get()
                 return EndpointSession(endpoint=endpoint, client=client, host=host, version=version or {})
-            except Exception as exc:  # noqa: BLE001 - any proxmox/auth/network error
-                connection_errors.append(f"{host} via {auth_type}: {exc}")
-
+            except Exception as exc:
+                connection_errors.append(host + ' via ' + auth_type + ': ' + str(exc))
     raise ProxmoxSyncError(
-        f"Unable to connect to endpoint '{endpoint}'. Attempts: {' | '.join(connection_errors)}"
+        'Unable to connect to endpoint ' + str(endpoint) + '. Attempts: ' + ' | '.join(connection_errors)
     )
 
 
-def _cluster_status_data(client: Any) -> tuple[str, str | None, list[dict]]:
+def _cluster_status_data(client):
     status_rows = client.cluster.status.get()
-    nodes = [row for row in status_rows if row.get("type") == "node"]
-    cluster_row = next((row for row in status_rows if row.get("type") == "cluster"), None)
-
+    nodes = [row for row in status_rows if row.get('type') == 'node']
+    cluster_row = next((row for row in status_rows if row.get('type') == 'cluster'), None)
     if cluster_row:
         mode = ProxmoxModeChoices.PROXMOX_MODE_CLUSTER
-        cluster_name = cluster_row.get("name")
+        cluster_name = cluster_row.get('name')
     elif len(nodes) == 1:
         mode = ProxmoxModeChoices.PROXMOX_MODE_STANDALONE
-        cluster_name = nodes[0].get("name")
+        cluster_name = nodes[0].get('name')
     else:
         mode = ProxmoxModeChoices.PROXMOX_MODE_UNDEFINED
         cluster_name = None
-
     return mode, cluster_name, nodes
 
-
-def _update_endpoint_metadata(session: EndpointSession) -> dict[str, Any]:
+def _update_endpoint_metadata(session):
     endpoint = session.endpoint
     mode, cluster_name, nodes = _cluster_status_data(session.client)
     version = session.version or {}
-
-    updated_fields: list[str] = []
+    update_fields = []
     new_name = cluster_name or endpoint.name
-    if endpoint.name != new_name:
+    if not endpoint.name == new_name:
         endpoint.name = new_name
-        updated_fields.append("name")
-    if endpoint.mode != mode:
+        update_fields.append('name')
+    if not endpoint.mode == mode:
         endpoint.mode = mode
-        updated_fields.append("mode")
-    if endpoint.version != version.get("version"):
-        endpoint.version = version.get("version")
-        updated_fields.append("version")
-    if endpoint.repoid != version.get("repoid"):
-        endpoint.repoid = version.get("repoid")
-        updated_fields.append("repoid")
-    if updated_fields:
-        endpoint.save(update_fields=updated_fields)
-
+        update_fields.append('mode')
+    if not endpoint.version == version.get('version'):
+        endpoint.version = version.get('version')
+        update_fields.append('version')
+    if not endpoint.repoid == version.get('repoid'):
+        endpoint.repoid = version.get('repoid')
+        update_fields.append('repoid')
+    if update_fields:
+        endpoint.save(update_fields=update_fields)
     return {
-        "mode": mode,
-        "name": cluster_name or endpoint.name,
-        "version": version.get("version"),
-        "repoid": version.get("repoid"),
-        "nodes": nodes,
+        'mode': mode,
+        'name': cluster_name or endpoint.name,
+        'version': version.get('version'),
+        'repoid': version.get('repoid'),
+        'nodes': nodes,
     }
 
-
-def _ensure_base_objects(mode: str) -> dict[str, Any]:
+def _ensure_base_objects(mode, site=None):
     tag, _ = Tag.objects.get_or_create(
         slug=MANAGED_TAG_SLUG,
         defaults={
-            "name": "Proxmox2NetBox",
-            "color": "ff5722",
-            "description": "Objects managed by proxmox2netbox",
+            'name': 'Proxmox2NetBox',
+            'color': 'ff5722',
+            'description': 'Objects managed by proxmox2netbox',
         },
     )
     manufacturer, _ = Manufacturer.objects.get_or_create(
-        slug="proxmox",
-        defaults={"name": "Proxmox"},
+        slug='proxmox',
+        defaults={'name': 'Proxmox'},
     )
     device_type, _ = DeviceType.objects.get_or_create(
-        slug="proxmox-node",
-        defaults={"manufacturer": manufacturer, "model": "Proxmox Node"},
+        slug='proxmox-node',
+        defaults={'manufacturer': manufacturer, 'model': 'Proxmox Node'},
     )
-    site, _ = Site.objects.get_or_create(
-        slug="proxmox2netbox",
-        defaults={"name": "Proxmox2NetBox"},
-    )
+    if site is None:
+        site, _ = Site.objects.get_or_create(
+            slug='proxmox2netbox',
+            defaults={'name': 'Proxmox2NetBox'},
+        )
     node_role, _ = DeviceRole.objects.get_or_create(
-        slug="proxmox-node",
-        defaults={"name": "Proxmox Node", "vm_role": False},
+        slug='proxmox-node',
+        defaults={'name': 'Proxmox Node', 'vm_role': False},
     )
     qemu_role, _ = DeviceRole.objects.get_or_create(
-        slug="proxmox-vm-qemu",
-        defaults={"name": "Proxmox VM (QEMU)", "vm_role": True},
+        slug='proxmox-vm-qemu',
+        defaults={'name': 'Proxmox VM (QEMU)', 'vm_role': True},
     )
     lxc_role, _ = DeviceRole.objects.get_or_create(
-        slug="proxmox-vm-lxc",
-        defaults={"name": "Proxmox Container (LXC)", "vm_role": True},
+        slug='proxmox-vm-lxc',
+        defaults={'name': 'Proxmox Container (LXC)', 'vm_role': True},
     )
     cluster_type, _ = ClusterType.objects.get_or_create(
-        slug=f"proxmox-{mode}",
-        defaults={"name": f"Proxmox {mode.capitalize()}"},
+        slug='proxmox-' + mode,
+        defaults={'name': 'Proxmox ' + mode.capitalize()},
     )
     return {
-        "tag": tag,
-        "manufacturer": manufacturer,
-        "device_type": device_type,
-        "site": site,
-        "node_role": node_role,
-        "qemu_role": qemu_role,
-        "lxc_role": lxc_role,
-        "cluster_type": cluster_type,
+        'tag': tag,
+        'manufacturer': manufacturer,
+        'device_type': device_type,
+        'site': site,
+        'node_role': node_role,
+        'qemu_role': qemu_role,
+        'lxc_role': lxc_role,
+        'cluster_type': cluster_type,
     }
 
-
-def _upsert_cluster(cluster_name: str, cluster_type: ClusterType, tag: Tag) -> Cluster:
-    clusters = Cluster.objects.filter(name=cluster_name).order_by("pk")
-    cluster = clusters.first()
+def _upsert_cluster(cluster_name, cluster_type, tag, site=None):
+    cluster = Cluster.objects.filter(name=cluster_name).order_by('pk').first()
     if cluster is None:
-        cluster = Cluster.objects.create(name=cluster_name, type=cluster_type)
-    elif cluster.type_id != cluster_type.id:
-        cluster.type = cluster_type
-        cluster.save(update_fields=["type"])
+        create_kwargs = {'name': cluster_name, 'type': cluster_type}
+        if site is not None:
+            create_kwargs['site'] = site
+        cluster = Cluster.objects.create(**create_kwargs)
+    else:
+        update_fields = []
+        if not cluster.type_id == cluster_type.id:
+            cluster.type = cluster_type
+            update_fields.append('type')
+        if site is not None and not cluster.site_id == site.id:
+            cluster.site = site
+            update_fields.append('site')
+        if update_fields:
+            cluster.save(update_fields=update_fields)
     _safe_add_tag(cluster, tag)
     return cluster
 
 
-def _status_from_proxmox(value: str | None) -> str:
-    return "active" if value in {"running", "active"} else "offline"
+def _status_from_proxmox(raw_status):
+    if raw_status == 'running':
+        return 'active'
+    if raw_status in ('stopped', 'paused'):
+        return 'offline'
+    return 'staged'
 
 
-def _extract_vm_config_networks(config: dict[str, Any]) -> list[tuple[str, dict[str, str]]]:
-    interfaces: list[tuple[str, dict[str, str]]] = []
-    for key, raw_value in config.items():
-        if not re.match(r"^net\d+$", key):
+def _extract_mac(net_value):
+    for part in net_value.split(','):
+        part = part.strip()
+        if '=' not in part:
             continue
-        if not isinstance(raw_value, str):
+        k, v = part.split('=', 1)
+        k_lower = k.lower()
+        if k_lower in _QEMU_NIC_MODELS or k_lower == 'hwaddr':
+            mac = v.strip().upper()
+            if re.match(r'^[0-9A-F]{2}(:[0-9A-F]{2}){5}$', mac):
+                return mac
+    return None
+
+def _iface_description(net_value):
+    parts = []
+    model = None
+    for token in net_value.split(','):
+        token = token.strip()
+        if not token or '=' not in token:
             continue
-        values: dict[str, str] = {}
-        for item in raw_value.split(","):
-            if "=" not in item:
-                continue
-            k, v = item.split("=", 1)
-            values[k.strip()] = v.strip()
-        interfaces.append((key, values))
-    return interfaces
+        k, v = token.split('=', 1)
+        k_lower = k.lower()
+        if k_lower == 'bridge':
+            parts.append('bridge=' + v)
+        elif k_lower == 'tag':
+            parts.append('vlan=' + v)
+        elif k_lower == 'rate':
+            parts.append('rate=' + v + 'MB/s')
+        elif k_lower in _QEMU_NIC_MODELS:
+            model = k_lower
+    if model:
+        parts.append(model)
+    return ', '.join(parts) if parts else 'Proxmox network interface'
 
 
-def _size_token_to_mb(size_token: str | None) -> int | None:
-    if not size_token:
+def _extract_vm_config_networks(config):
+    nets = []
+    for key, value in config.items():
+        if re.match(r'^net\d+$', key):
+            idx = int(key[3:])
+            nets.append((idx, key, str(value)))
+    nets.sort(key=lambda x: x[0])
+    return nets
+
+
+def _size_token_to_mb(token):
+    token = token.strip().upper()
+    m = re.match(r'^(\d+(?:\.\d+)?)([KMGT]?)$', token)
+    if not m:
         return None
-    match = re.match(r"^\s*(\d+(?:\.\d+)?)\s*([kmgtp]?)(?:b)?\s*$", size_token.strip(), re.IGNORECASE)
-    if not match:
-        return None
-
-    value = float(match.group(1))
-    unit = (match.group(2) or "").upper()
-    unit_multipliers = {
-        "": 1,  # Proxmox size values are usually MB when unit is omitted
-        "K": 1 / 1024,
-        "M": 1,
-        "G": 1024,
-        "T": 1024 * 1024,
-        "P": 1024 * 1024 * 1024,
-    }
-    multiplier = unit_multipliers.get(unit)
-    if multiplier is None:
-        return None
-
-    size_mb = int(math.ceil(value * multiplier))
-    return max(size_mb, 1)
+    num = float(m.group(1))
+    unit = m.group(2)
+    if unit in ('', 'G'):
+        return int(num * 1024)
+    if unit == 'M':
+        return int(num)
+    if unit == 'K':
+        return max(1, int(num // 1024))
+    if unit == 'T':
+        return int(num * 1024 * 1024)
+    return None
 
 
-def _extract_vm_config_disks(config: dict[str, Any]) -> list[dict[str, Any]]:
-    disk_items: list[dict[str, Any]] = []
-    for key, raw_value in config.items():
-        is_qemu_disk = re.match(r"^(scsi|sata|virtio|ide|efidisk)\d+$", key)
-        is_lxc_disk = key == "rootfs" or re.match(r"^mp\d+$", key)
-        if not (is_qemu_disk or is_lxc_disk):
-            continue
-        if not isinstance(raw_value, str):
-            continue
-
-        segments = [segment.strip() for segment in raw_value.split(",") if segment.strip()]
-        if not segments:
-            continue
-
-        source = segments[0]
-        attrs: dict[str, str] = {}
-        for segment in segments[1:]:
-            if "=" not in segment:
-                continue
-            attr_key, attr_value = segment.split("=", 1)
-            attrs[attr_key.strip()] = attr_value.strip()
-
-        if attrs.get("media") == "cdrom":
-            continue
-
-        size_mb = _size_token_to_mb(attrs.get("size"))
-        if size_mb is None:
-            continue
-
-        description = source
-        mountpoint = attrs.get("mp")
-        if mountpoint:
-            description = f"{source} (mount: {mountpoint})"
-        description = description[:200]
-
-        disk_items.append(
-            {
-                "name": key,
-                "size": size_mb,
-                "description": description,
-            }
-        )
-    return disk_items
-
-
-def _fetch_vm_config(client: Any, node_name: str, vm_type: str, vmid: int) -> dict[str, Any] | None:
+def _fetch_vm_config(client, node, vm_type, vmid):
     try:
-        if vm_type == "qemu":
-            return client.nodes(node_name).qemu(vmid).config.get()
-        return client.nodes(node_name).lxc(vmid).config.get()
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Unable to fetch VM config for %s/%s/%s: %s", node_name, vm_type, vmid, exc)
-        return None
+        if vm_type == 'lxc':
+            return client.nodes(node).lxc(vmid).config.get() or {}
+        return client.nodes(node).qemu(vmid).config.get() or {}
+    except Exception:
+        return {}
+
+def _extract_vm_config_disks(vm_type, config):
+    disks = []
+    if vm_type == 'lxc':
+        disk_keys = [k for k in config if re.match(r'^(rootfs|mp\d+)$', k)]
+    else:
+        disk_keys = [k for k in config if re.match(r'^(virtio|scsi|sata|ide|efidisk|tpmstate)\d+$', k)]
+    for key in disk_keys:
+        value = str(config[key])
+        size_mb = None
+        for token in value.split(','):
+            token = token.strip()
+            if token.lower().startswith('size='):
+                size_mb = _size_token_to_mb(token[5:])
+                break
+        if size_mb is None:
+            first = value.split(',')[0].strip()
+            if ':' in first:
+                size_mb = _size_token_to_mb(first.split(':')[1])
+        disks.append({'key': key, 'size_mb': size_mb})
+    return disks
 
 
-def _upsert_vm_interfaces(
-    vm: VirtualMachine,
-    vm_type: str,
-    vmid: int,
-    node_name: str,
-    client: Any,
-    tag: Tag,
-    vm_config: dict[str, Any] | None = None,
-) -> tuple[int, int]:
-    created_count = 0
-    updated_count = 0
+def _extract_interface_ips(config, vm_type):
+    ips = []
+    if vm_type == 'lxc':
+        for key, value in config.items():
+            if not re.match(r'^net\d+$', key):
+                continue
+            for token in str(value).split(','):
+                token = token.strip()
+                low = token.lower()
+                if low.startswith('ip=') or low.startswith('ip6='):
+                    addr = token.split('=', 1)[1].strip()
+                    if addr and addr not in ('dhcp', 'auto', 'manual'):
+                        ips.append(addr)
+    else:
+        for key, value in config.items():
+            if not re.match(r'^ipconfig\d+$', key):
+                continue
+            for token in str(value).split(','):
+                token = token.strip()
+                low = token.lower()
+                if low.startswith('ip=') or low.startswith('ip6='):
+                    addr = token.split('=', 1)[1].strip()
+                    if addr and addr not in ('dhcp', 'auto'):
+                        ips.append(addr)
+    return ips
 
-    if vm_config is None:
-        vm_config = _fetch_vm_config(client=client, node_name=node_name, vm_type=vm_type, vmid=vmid)
-    if vm_config is None:
-        return created_count, updated_count
 
-    for default_iface_name, attrs in _extract_vm_config_networks(vm_config):
-        iface_name = attrs.get("name", default_iface_name)
+def _try_agent_ips(client, node, vmid):
+    try:
+        ifaces = client.nodes(node).qemu(vmid).agent('network-get-interfaces').get()
+        if not ifaces:
+            return []
+        result = ifaces.get('result') or []
+        ips = []
+        for iface in result:
+            if (iface.get('name') or '').lower() in ('lo', 'loopback'):
+                continue
+            for ip_info in (iface.get('ip-addresses') or []):
+                addr = ip_info.get('ip-address', '')
+                prefix_len = ip_info.get('prefix', '')
+                if not addr or not prefix_len:
+                    continue
+                try:
+                    net = _ipaddress.ip_interface(addr + '/' + str(prefix_len))
+                    if net.is_link_local or net.is_loopback:
+                        continue
+                    ips.append(str(net))
+                except ValueError:
+                    pass
+        return ips
+    except Exception:
+        return []
 
-        iface, created = VMInterface.objects.get_or_create(
-            virtual_machine=vm,
-            name=iface_name,
-            defaults={
-                "enabled": True,
-                "description": "Imported from Proxmox",
-            },
-        )
-        if created:
-            created_count += 1
+
+def _sync_iface_ips(vm, iface, ip_strings, vrf=None):
+    wanted = set()
+    for s in ip_strings:
+        try:
+            net = _ipaddress.ip_interface(s)
+            if net.is_link_local or net.is_loopback:
+                continue
+            wanted.add(str(net))
+        except ValueError:
+            pass
+    content_type = ContentType.objects.get_for_model(VMInterface)
+    existing = list(IPAddress.objects.filter(
+        assigned_object_type=content_type,
+        assigned_object_id=iface.pk,
+    ))
+    existing_by_addr = {str(ip.address): ip for ip in existing}
+    for addr in wanted:
+        if addr in existing_by_addr:
+            ip = existing_by_addr[addr]
+            if vrf is not None and not ip.vrf_id == vrf.pk:
+                ip.vrf = vrf
+                ip.save(update_fields=['vrf'])
+            continue
+        create_kwargs = {
+            'address': addr,
+            'assigned_object_type': content_type,
+            'assigned_object_id': iface.pk,
+        }
+        if vrf is not None:
+            create_kwargs['vrf'] = vrf
+        IPAddress.objects.create(**create_kwargs)
+    for addr, ip in existing_by_addr.items():
+        if addr not in wanted:
+            ip.delete()
+
+
+def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_type=None, config=None, vrf=None):
+    config_ips = _extract_interface_ips(config or {}, vm_type or 'qemu')
+    content_type = ContentType.objects.get_for_model(VirtualMachine)
+    existing = {iface.name: iface for iface in VMInterface.objects.filter(virtual_machine=vm)}
+    seen_names = set()
+    primary_ip_candidates = []
+    for idx, key, net_value in nets:
+        mac = _extract_mac(net_value)
+        name = 'eth' + str(idx)
+        desc = _iface_description(net_value)
+        iface = existing.get(name)
+        if iface is None:
+            iface = VMInterface.objects.create(
+                virtual_machine=vm,
+                name=name,
+                mac_address=mac,
+                description=desc,
+            )
         else:
-            changed = False
-            if not iface.enabled:
-                iface.enabled = True
-                changed = True
-            if changed:
-                iface.save()
-                updated_count += 1
+            update_fields = []
+            current_mac = str(iface.mac_address or '').upper()
+            if mac and not current_mac == mac:
+                iface.mac_address = mac
+                update_fields.append('mac_address')
+            if not iface.description == desc:
+                iface.description = desc
+                update_fields.append('description')
+            if update_fields:
+                iface.save(update_fields=update_fields)
         _safe_add_tag(iface, tag)
+        seen_names.add(name)
+        if idx == 0:
+            ip_strs = config_ips
+            if not ip_strs and vm_type == 'qemu' and client and node and vmid:
+                ip_strs = _try_agent_ips(client, node, vmid)
+            if ip_strs:
+                _sync_iface_ips(vm, iface, ip_strs, vrf=vrf)
+                primary_ip_candidates.extend(ip_strs)
+    for name, iface in existing.items():
+        if name not in seen_names:
+            iface.delete()
+    return primary_ip_candidates
 
-    return created_count, updated_count
 
-
-def _sync_vm_disks(vm: VirtualMachine, vm_config: dict[str, Any], tag: Tag) -> tuple[int, int, int]:
-    created_count = 0
-    updated_count = 0
-    deleted_count = 0
-
-    desired_disks = _extract_vm_config_disks(vm_config)
-    desired_by_name = {disk["name"]: disk for disk in desired_disks}
-
-    for disk_name, disk_data in desired_by_name.items():
-        disk, created = VirtualDisk.objects.get_or_create(
-            virtual_machine=vm,
-            name=disk_name,
-            defaults={
-                "size": disk_data["size"],
-                "description": disk_data["description"],
-            },
-        )
-        if created:
-            created_count += 1
+def _sync_vm_disks(vm, disks, tag):
+    existing = {d.name: d for d in VirtualDisk.objects.filter(virtual_machine=vm)}
+    seen = set()
+    for disk in disks:
+        name = disk['key']
+        size_mb = disk['size_mb']
+        vd = existing.get(name)
+        if vd is None:
+            vd = VirtualDisk.objects.create(
+                virtual_machine=vm,
+                name=name,
+                size=size_mb if size_mb is not None else 0,
+            )
         else:
-            changed = False
-            if disk.size != disk_data["size"]:
-                disk.size = disk_data["size"]
-                changed = True
-            if disk.description != disk_data["description"]:
-                disk.description = disk_data["description"]
-                changed = True
-            if changed:
-                disk.save(update_fields=["size", "description"])
-                updated_count += 1
-
-        _safe_add_tag(disk, tag)
-
-    stale_qs = (
-        VirtualDisk.objects.filter(virtual_machine=vm, tags=tag)
-        .exclude(name__in=desired_by_name.keys())
-        .order_by("pk")
-    )
-    deleted_count = stale_qs.count()
-    if deleted_count:
-        stale_qs.delete()
-
-    return created_count, updated_count, deleted_count
+            if size_mb is not None and not vd.size == size_mb:
+                vd.size = size_mb
+                vd.save(update_fields=['size'])
+        _safe_add_tag(vd, tag)
+        seen.add(name)
+    for name, vd in existing.items():
+        if name not in seen:
+            vd.delete()
 
 
-def _upsert_devices_for_session(session: EndpointSession) -> dict[str, int]:
-    metadata = _update_endpoint_metadata(session)
-    mode = metadata["mode"]
-    cluster_name = metadata["name"] or session.host
-    nodes = metadata["nodes"]
-    base = _ensure_base_objects(mode)
+def _set_vm_primary_ips(vm, ip_strings, vrf=None):
+    v4 = None
+    v6 = None
+    for s in ip_strings:
+        try:
+            net = _ipaddress.ip_interface(s)
+            if net.is_link_local or net.is_loopback:
+                continue
+            if net.version == 4 and v4 is None:
+                vrf_filter = {'vrf': vrf} if vrf is not None else {'vrf__isnull': True}
+                v4 = IPAddress.objects.filter(address=str(net), **vrf_filter).first()
+            elif net.version == 6 and v6 is None:
+                vrf_filter = {'vrf': vrf} if vrf is not None else {'vrf__isnull': True}
+                v6 = IPAddress.objects.filter(address=str(net), **vrf_filter).first()
+        except ValueError:
+            pass
+    update_fields = []
+    if not vm.primary_ip4_id == (v4.pk if v4 else None):
+        vm.primary_ip4 = v4
+        update_fields.append('primary_ip4')
+    if not vm.primary_ip6_id == (v6.pk if v6 else None):
+        vm.primary_ip6 = v6
+        update_fields.append('primary_ip6')
+    if update_fields:
+        vm.save(update_fields=update_fields)
 
-    cluster = _upsert_cluster(cluster_name, base["cluster_type"], base["tag"])
 
-    created = 0
-    updated = 0
-    for node in nodes:
-        node_name = node.get("name")
+def _sync_nodes(session, cluster, base):
+    client = session.client
+    tag = base['tag']
+    site = base['site']
+    device_type = base['device_type']
+    node_role = base['node_role']
+    nodes_raw = session.client.nodes.get() or []
+    seen_names = set()
+    for node_data in nodes_raw:
+        node_name = node_data.get('node', '')
         if not node_name:
             continue
-        desired_status = "active" if node.get("online") == 1 else "offline"
-        device, was_created = Device.objects.get_or_create(
-            name=node_name,
-            defaults={
-                "device_type": base["device_type"],
-                "role": base["node_role"],
-                "site": base["site"],
-                "status": desired_status,
-                "cluster": cluster,
-                "description": "Imported from Proxmox by proxmox2netbox",
-            },
-        )
-        if was_created:
-            created += 1
+        seen_names.add(node_name)
+        raw_status = node_data.get('status', '')
+        status = _status_from_proxmox(raw_status)
+        device = Device.objects.filter(name=node_name, cluster=cluster).order_by('pk').first()
+        if device is None:
+            device = Device.objects.create(
+                name=node_name,
+                cluster=cluster,
+                site=site,
+                device_type=device_type,
+                role=node_role,
+                status=status,
+            )
         else:
-            changed = False
-            if device.device_type_id != base["device_type"].id:
-                device.device_type = base["device_type"]
-                changed = True
-            if device.role_id != base["node_role"].id:
-                device.role = base["node_role"]
-                changed = True
-            if device.site_id != base["site"].id:
-                device.site = base["site"]
-                changed = True
-            if device.cluster_id != cluster.id:
+            update_fields = []
+            if not device.status == status:
+                device.status = status
+                update_fields.append('status')
+            if not device.cluster_id == cluster.pk:
                 device.cluster = cluster
-                changed = True
-            if device.status != desired_status:
-                device.status = desired_status
-                changed = True
-            if changed:
-                device.save()
-                updated += 1
-        _safe_add_tag(device, base["tag"])
-
-    return {"created_devices": created, "updated_devices": updated}
-
-
-def _upsert_virtual_machines_for_session(session: EndpointSession) -> dict[str, int]:
-    metadata = _update_endpoint_metadata(session)
-    mode = metadata["mode"]
-    cluster_name = metadata["name"] or session.host
-    base = _ensure_base_objects(mode)
-
-    cluster = _upsert_cluster(cluster_name, base["cluster_type"], base["tag"])
-
-    resources = session.client.cluster.resources.get()
-    vm_resources = [resource for resource in resources if resource.get("type") in {"qemu", "lxc"}]
-
-    created_vm = 0
-    updated_vm = 0
-    created_iface = 0
-    updated_iface = 0
-    created_disk = 0
-    updated_disk = 0
-    deleted_disk = 0
-
-    for resource in vm_resources:
-        vm_type = resource.get("type", "qemu")
-        vmid = int(resource.get("vmid", 0))
-        vm_name = resource.get("name") or f"{vm_type}-{vmid}"
-        role = base["qemu_role"] if vm_type == "qemu" else base["lxc_role"]
-        node_name = resource.get("node")
-        backing_device = Device.objects.filter(name=node_name).first() if node_name else None
-
-        desired = {
-            "status": _status_from_proxmox(resource.get("status")),
-            "cluster": cluster,
-            "device": backing_device,
-            "role": role,
-            "vcpus": int(resource.get("maxcpu", 0)) or None,
-            "memory": int((resource.get("maxmem", 0) or 0) / 1_000_000) or None,
-            "disk": int((resource.get("maxdisk", 0) or 0) / 1_000_000) or None,
-            "comments": "Imported from Proxmox by proxmox2netbox",
-        }
-
-        vm, was_created = VirtualMachine.objects.get_or_create(name=vm_name, defaults=desired)
-        if was_created:
-            created_vm += 1
-        else:
-            changed = False
-            for field_name, field_value in desired.items():
-                if getattr(vm, field_name) != field_value:
-                    setattr(vm, field_name, field_value)
-                    changed = True
-            if changed:
-                vm.save()
-                updated_vm += 1
-
-        _safe_add_tag(vm, base["tag"])
-
-        if node_name and vmid:
-            vm_config = _fetch_vm_config(
-                client=session.client,
-                node_name=node_name,
-                vm_type=vm_type,
-                vmid=vmid,
-            )
-        else:
-            vm_config = None
-
-        if vm_config:
-            iface_created, iface_updated = _upsert_vm_interfaces(
-                vm=vm,
-                vm_type=vm_type,
-                vmid=vmid,
-                node_name=node_name,
-                client=session.client,
-                tag=base["tag"],
-                vm_config=vm_config,
-            )
-            created_iface += iface_created
-            updated_iface += iface_updated
-
-            disk_created, disk_updated, disk_deleted = _sync_vm_disks(
-                vm=vm,
-                vm_config=vm_config,
-                tag=base["tag"],
-            )
-            created_disk += disk_created
-            updated_disk += disk_updated
-            deleted_disk += disk_deleted
-
-    return {
-        "created_virtual_machines": created_vm,
-        "updated_virtual_machines": updated_vm,
-        "created_vm_interfaces": created_iface,
-        "updated_vm_interfaces": updated_iface,
-        "created_virtual_disks": created_disk,
-        "updated_virtual_disks": updated_disk,
-        "deleted_virtual_disks": deleted_disk,
-    }
+                update_fields.append('cluster')
+            if not device.device_type_id == device_type.pk:
+                device.device_type = device_type
+                update_fields.append('device_type')
+            if not device.role_id == node_role.pk:
+                device.role = node_role
+                update_fields.append('role')
+            if update_fields:
+                device.save(update_fields=update_fields)
+        _safe_add_tag(device, tag)
+    return seen_names
 
 
-def _run_sync(sync_type: str, per_endpoint_func) -> dict[str, Any]:
-    endpoints = list(ProxmoxEndpoint.objects.all())
-    if not endpoints:
-        raise ProxmoxSyncError("No Proxmox endpoints configured.")
-
-    started_at = timezone.now()
-    process = SyncProcess.objects.create(
-        name=f"sync-{sync_type}-{started_at.isoformat()}",
-        sync_type=sync_type,
-        status=SyncStatusChoices.SYNCING,
-        started_at=started_at,
-    )
-
-    result: dict[str, Any] = {
-        "sync_type": sync_type,
-        "started_at": started_at,
-        "completed_at": None,
-        "runtime_seconds": None,
-        "endpoints": 0,
-        "errors": [],
-    }
-
-    try:
-        for endpoint in endpoints:
+def _sync_vms(session, cluster, base):
+    client = session.client
+    tag = base['tag']
+    qemu_role = base['qemu_role']
+    lxc_role = base['lxc_role']
+    site = base['site']
+    vrf = getattr(session.endpoint, 'netbox_vrf', None)
+    nodes_raw = client.nodes.get() or []
+    for node_data in nodes_raw:
+        node_name = node_data.get('node', '')
+        if not node_name:
+            continue
+        for vm_type in ('qemu', 'lxc'):
             try:
-                session = connect_endpoint(endpoint)
-                endpoint_result = per_endpoint_func(session)
-                result["endpoints"] += 1
-                for key, value in endpoint_result.items():
-                    result[key] = result.get(key, 0) + value
-            except Exception as exc:  # noqa: BLE001
-                logger.exception("Sync failed for endpoint %s: %s", endpoint, exc)
-                result["errors"].append(f"{endpoint}: {exc}")
+                if vm_type == 'lxc':
+                    vms_raw = client.nodes(node_name).lxc.get() or []
+                else:
+                    vms_raw = client.nodes(node_name).qemu.get() or []
+            except Exception:
+                continue
+            for vm_data in vms_raw:
+                vmid = vm_data.get('vmid')
+                vm_name = vm_data.get('name', 'vm-' + str(vmid))
+                raw_status = vm_data.get('status', '')
+                status = _status_from_proxmox(raw_status)
+                vcpus = vm_data.get('cpus') or vm_data.get('maxcpu')
+                memory_mb = None
+                raw_mem = vm_data.get('maxmem')
+                if raw_mem:
+                    memory_mb = int(raw_mem) // (1024 * 1024)
+                role = qemu_role if vm_type == 'qemu' else lxc_role
+                vm = VirtualMachine.objects.filter(name=vm_name, cluster=cluster).order_by('pk').first()
+                if vm is None:
+                    create_kwargs = {
+                        'name': vm_name,
+                        'cluster': cluster,
+                        'status': status,
+                        'role': role,
+                    }
+                    if site is not None:
+                        create_kwargs['site'] = site
+                    if vcpus is not None:
+                        create_kwargs['vcpus'] = vcpus
+                    if memory_mb is not None:
+                        create_kwargs['memory'] = memory_mb
+                    vm = VirtualMachine.objects.create(**create_kwargs)
+                else:
+                    update_fields = []
+                    if not vm.status == status:
+                        vm.status = status
+                        update_fields.append('status')
+                    if not vm.role_id == role.pk:
+                        vm.role = role
+                        update_fields.append('role')
+                    if vcpus is not None and not vm.vcpus == vcpus:
+                        vm.vcpus = vcpus
+                        update_fields.append('vcpus')
+                    if memory_mb is not None and not vm.memory == memory_mb:
+                        vm.memory = memory_mb
+                        update_fields.append('memory')
+                    if update_fields:
+                        vm.save(update_fields=update_fields)
+                _safe_add_tag(vm, tag)
+                config = _fetch_vm_config(client, node_name, vm_type, vmid)
+                nets = _extract_vm_config_networks(config)
+                primary_ip_candidates = _upsert_vm_interfaces(
+                    vm, nets, tag,
+                    client=client, node=node_name, vmid=vmid,
+                    vm_type=vm_type, config=config, vrf=vrf,
+                )
+                disks = _extract_vm_config_disks(vm_type, config)
+                _sync_vm_disks(vm, disks, tag)
+                if primary_ip_candidates:
+                    _set_vm_primary_ips(vm, primary_ip_candidates, vrf=vrf)
 
-        completed_at = timezone.now()
-        runtime = (completed_at - started_at).total_seconds()
-        result["completed_at"] = completed_at
-        result["runtime_seconds"] = runtime
-        process.completed_at = completed_at
-        process.runtime = runtime
-        process.status = (
-            SyncStatusChoices.COMPLETED if not result["errors"] else SyncStatusChoices.FAILED
-        )
-        process.save(update_fields=["completed_at", "runtime", "status"])
-        return result
-    except Exception:
-        process.status = SyncStatusChoices.FAILED
-        process.completed_at = timezone.now()
-        process.runtime = (process.completed_at - started_at).total_seconds()
-        process.save(update_fields=["completed_at", "runtime", "status"])
-        raise
+
+def _upsert_all_for_session(session, sync_type):
+    endpoint = session.endpoint
+    meta = _update_endpoint_metadata(session)
+    mode = meta['mode']
+    cluster_name = meta['name']
+    netbox_site = getattr(endpoint, 'netbox_site', None)
+    base = _ensure_base_objects(mode, site=netbox_site)
+    cluster = _upsert_cluster(cluster_name, base['cluster_type'], base['tag'], site=base['site'] if netbox_site is None else netbox_site)
+    if sync_type in (SyncTypeChoices.ALL, SyncTypeChoices.DEVICES):
+        _sync_nodes(session, cluster, base)
+    if sync_type in (SyncTypeChoices.ALL, SyncTypeChoices.VIRTUAL_MACHINES):
+        _sync_vms(session, cluster, base)
 
 
-def check_endpoint_connection(endpoint: ProxmoxEndpoint) -> tuple[bool, str | None]:
+def check_endpoint_connection(endpoint):
     try:
-        connect_endpoint(endpoint)
-        return True, None
-    except Exception as exc:  # noqa: BLE001
-        return False, str(exc)
+        session = connect_endpoint(endpoint)
+        return {'ok': True, 'host': session.host, 'version': session.version}
+    except ProxmoxSyncError as exc:
+        return {'ok': False, 'error': str(exc)}
 
 
-def get_endpoint_cluster_summary(endpoint: ProxmoxEndpoint) -> dict[str, Any]:
+def get_endpoint_cluster_summary(endpoint):
     session = connect_endpoint(endpoint)
-    return _update_endpoint_metadata(session)
+    meta = _update_endpoint_metadata(session)
+    return meta
 
 
-def sync_devices() -> dict[str, Any]:
-    return _run_sync(SyncTypeChoices.DEVICES, _upsert_devices_for_session)
+def sync_devices(sync_run=None):
+    endpoints = ProxmoxEndpoint.objects.all()
+    errors = []
+    for endpoint in endpoints:
+        try:
+            session = connect_endpoint(endpoint)
+            _upsert_all_for_session(session, SyncTypeChoices.DEVICES)
+        except Exception as exc:
+            logger.exception('sync_devices failed for endpoint %s', endpoint)
+            errors.append(str(exc))
+    if errors:
+        raise ProxmoxSyncError('sync_devices errors: ' + '; '.join(errors))
 
 
-def sync_virtual_machines() -> dict[str, Any]:
-    return _run_sync(SyncTypeChoices.VIRTUAL_MACHINES, _upsert_virtual_machines_for_session)
+def sync_virtual_machines(sync_run=None):
+    endpoints = ProxmoxEndpoint.objects.all()
+    errors = []
+    for endpoint in endpoints:
+        try:
+            session = connect_endpoint(endpoint)
+            _upsert_all_for_session(session, SyncTypeChoices.VIRTUAL_MACHINES)
+        except Exception as exc:
+            logger.exception('sync_virtual_machines failed for endpoint %s', endpoint)
+            errors.append(str(exc))
+    if errors:
+        raise ProxmoxSyncError('sync_virtual_machines errors: ' + '; '.join(errors))
 
 
-def sync_full_update() -> dict[str, Any]:
-    devices_result = sync_devices()
-    vms_result = sync_virtual_machines()
-
-    return {
-        "sync_type": SyncTypeChoices.ALL,
-        "started_at": devices_result.get("started_at"),
-        "completed_at": vms_result.get("completed_at"),
-        "runtime_seconds": (devices_result.get("runtime_seconds") or 0)
-        + (vms_result.get("runtime_seconds") or 0),
-        "endpoints": max(devices_result.get("endpoints", 0), vms_result.get("endpoints", 0)),
-        "created_devices": devices_result.get("created_devices", 0),
-        "updated_devices": devices_result.get("updated_devices", 0),
-        "created_virtual_machines": vms_result.get("created_virtual_machines", 0),
-        "updated_virtual_machines": vms_result.get("updated_virtual_machines", 0),
-        "created_vm_interfaces": vms_result.get("created_vm_interfaces", 0),
-        "updated_vm_interfaces": vms_result.get("updated_vm_interfaces", 0),
-        "created_virtual_disks": vms_result.get("created_virtual_disks", 0),
-        "updated_virtual_disks": vms_result.get("updated_virtual_disks", 0),
-        "deleted_virtual_disks": vms_result.get("deleted_virtual_disks", 0),
-        "errors": [*devices_result.get("errors", []), *vms_result.get("errors", [])],
-    }
+def sync_full_update(sync_run=None):
+    endpoints = ProxmoxEndpoint.objects.all()
+    errors = []
+    for endpoint in endpoints:
+        try:
+            session = connect_endpoint(endpoint)
+            _upsert_all_for_session(session, SyncTypeChoices.ALL)
+        except Exception as exc:
+            logger.exception('sync_full_update failed for endpoint %s', endpoint)
+            errors.append(str(exc))
+    if errors:
+        raise ProxmoxSyncError('sync_full_update errors: ' + '; '.join(errors))

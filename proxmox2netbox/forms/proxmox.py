@@ -4,7 +4,8 @@ from django import forms
 # NetBox Imports
 from netbox.forms import NetBoxModelForm, NetBoxModelFilterSetForm
 from utilities.forms.fields import CommentField, DynamicModelChoiceField
-from ipam.models import IPAddress
+from dcim.models import Site
+from ipam.models import IPAddress, VRF
 from django.utils.translation import gettext as _
 
 # Proxmox2NetBox Imports
@@ -32,6 +33,18 @@ class ProxmoxEndpointForm(NetBoxModelForm):
         required=False,
         help_text=_('Choose or not to verify SSL certificate of the Proxmox Endpoint. Only use this if you are sure about the SSL certificate of the Proxmox Endpoint.'),
         label=_('Verify SSL')
+    )
+    netbox_site = DynamicModelChoiceField(
+        queryset=Site.objects.all(),
+        help_text=_('NetBox site for synced objects (nodes, VMs, clusters). If not set, a default site is used.'),
+        label=_('NetBox Site'),
+        required=False,
+    )
+    netbox_vrf = DynamicModelChoiceField(
+        queryset=VRF.objects.all(),
+        help_text=_('VRF for synced IP addresses. If not set, the global routing table is used.'),
+        label=_('NetBox VRF'),
+        required=False,
     )
     comments = CommentField()
 
@@ -65,6 +78,7 @@ class ProxmoxEndpointForm(NetBoxModelForm):
         fields = (
             'name', 'ip_address', 'domain', 'port', 'username',
             'password', 'token_name', 'token_value', 'verify_ssl',
+            'netbox_site', 'netbox_vrf',
             'tags'
         )
 

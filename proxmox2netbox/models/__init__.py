@@ -99,6 +99,24 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
         verbose_name=_('Verify SSL'),
         help_text=_('Choose or not to verify SSL certificate of the Proxmox Endpoint'),
     )
+    netbox_site = models.ForeignKey(
+        to='dcim.Site',
+        on_delete=models.SET_NULL,
+        related_name='+',
+        verbose_name=_('NetBox Site'),
+        null=True,
+        blank=True,
+        help_text=_('NetBox site to assign synced objects to. If not set, a default site is used.'),
+    )
+    netbox_vrf = models.ForeignKey(
+        to='ipam.VRF',
+        on_delete=models.SET_NULL,
+        related_name='+',
+        verbose_name=_('NetBox VRF'),
+        null=True,
+        blank=True,
+        help_text=_('VRF to assign synced IP addresses to. If not set, the global routing table is used.'),
+    )
 
     class Meta:
         verbose_name_plural: str = "Proxmox Endpoints"
