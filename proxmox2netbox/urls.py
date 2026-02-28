@@ -17,6 +17,10 @@ urlpatterns = [
     # SyncProcess Model URLs
     path('sync-processes/<int:pk>/', include(get_model_urls('proxmox2netbox', 'syncprocess'))),
     path('sync-processes/', include(get_model_urls('proxmox2netbox', 'syncprocess', detail=False))),
+
+    # ProxmoxNodeTypeMapping Model URLs
+    path('node-type-mappings/<int:pk>/', include(get_model_urls('proxmox2netbox', 'proxmoxnodetypemapping'))),
+    path('node-type-mappings/', include(get_model_urls('proxmox2netbox', 'proxmoxnodetypemapping', detail=False))),
     
     # Manual Sync (HTTP Request)
     path('sync/devices', views.sync_devices, name='sync_devices'),

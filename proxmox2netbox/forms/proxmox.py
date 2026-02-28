@@ -9,7 +9,7 @@ from ipam.models import IPAddress, VRF
 from django.utils.translation import gettext as _
 
 # Proxmox2NetBox Imports
-from ..models import ProxmoxEndpoint
+from ..models import ProxmoxEndpoint, ProxmoxNodeTypeMapping
 from ..choices import ProxmoxModeChoices
 
 
@@ -105,4 +105,30 @@ class ProxmoxEndpointFilterForm(NetBoxModelFilterSetForm):
     mode = forms.MultipleChoiceField(
         choices=ProxmoxModeChoices,
         required=False
+    )
+
+
+class ProxmoxNodeTypeMappingForm(NetBoxModelForm):
+    endpoint = forms.ModelChoiceField(
+        queryset=ProxmoxEndpoint.objects.select_related('ip_address'),
+        label=_('Proxmox Endpoint'),
+    )
+    device_type = DynamicModelChoiceField(
+        queryset=DeviceType.objects.all(),
+        label=_('Device Type'),
+        help_text=_('Device type to assign to this node during sync.'),
+    )
+
+    class Meta:
+        model = ProxmoxNodeTypeMapping
+        fields = ('endpoint', 'node_name', 'device_type', 'tags')
+
+
+class ProxmoxNodeTypeMappingFilterForm(NetBoxModelFilterSetForm):
+    model = ProxmoxNodeTypeMapping
+    node_name = forms.CharField(required=False, label=_('Node Name'))
+    endpoint = forms.ModelChoiceField(
+        queryset=ProxmoxEndpoint.objects.select_related('ip_address'),
+        required=False,
+        label=_('Proxmox Endpoint'),
     )

@@ -1,5 +1,5 @@
 from netbox.filtersets import NetBoxModelFilterSet
-from .models import ProxmoxEndpoint, SyncProcess
+from .models import ProxmoxEndpoint, ProxmoxNodeTypeMapping, SyncProcess
 
 
 class SyncProcessFilterSet(NetBoxModelFilterSet):
@@ -19,6 +19,15 @@ class ProxmoxEndpointFilterSet(NetBoxModelFilterSet):
     class Meta:
         model = ProxmoxEndpoint
         fields = ['id', 'name', 'domain', 'ip_address', 'mode']
-    
+
     def search(self, queryset, name, value):
         return queryset.filter(name__icontains=value)
+
+
+class ProxmoxNodeTypeMappingFilterSet(NetBoxModelFilterSet):
+    class Meta:
+        model = ProxmoxNodeTypeMapping
+        fields = ['id', 'endpoint', 'node_name', 'device_type']
+
+    def search(self, queryset, name, value):
+        return queryset.filter(node_name__icontains=value)

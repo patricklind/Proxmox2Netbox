@@ -165,6 +165,44 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
         return reverse('plugins:proxmox2netbox:proxmoxendpoint', args=[self.pk])
 
 
+class ProxmoxNodeTypeMapping(NetBoxModel):
+    """
+    Maps a specific Proxmox node name (per endpoint) to a NetBox DeviceType.
+    When present, sync uses this type instead of the endpoint default.
+    Existing nodes without a mapping are never updated.
+    """
+    endpoint = models.ForeignKey(
+        to='proxmox2netbox.ProxmoxEndpoint',
+        on_delete=models.CASCADE,
+        related_name='node_type_mappings',
+        verbose_name=_('Proxmox Endpoint'),
+    )
+    node_name = models.CharField(
+        max_length=255,
+        verbose_name=_('Node Name'),
+        help_text=_('Exact node name as reported by Proxmox (e.g. pve01).'),
+    )
+    device_type = models.ForeignKey(
+        to='dcim.DeviceType',
+        on_delete=models.PROTECT,
+        related_name='+',
+        verbose_name=_('Device Type'),
+        help_text=_('Device type to assign to this node when syncing.'),
+    )
+
+    class Meta:
+        verbose_name = 'Node Device Type Mapping'
+        verbose_name_plural = 'Node Device Type Mappings'
+        unique_together = ['endpoint', 'node_name']
+        ordering = ('endpoint', 'node_name')
+
+    def __str__(self):
+        return f'{self.endpoint.name} / {self.node_name} → {self.device_type}'
+
+    def get_absolute_url(self):
+        return reverse('plugins:proxmox2netbox:proxmoxnodetypemapping', args=[self.pk])
+
+
 class NetBoxEndpoint(NetBoxModel, CommonProperties):
     name = models.CharField(
         default='NetBox Endpoint',

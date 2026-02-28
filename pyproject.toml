@@ -1,6 +1,6 @@
 [project]
 name = "proxmox2netbox"
-version = "1.2.3"
+version = "1.2.4"
 description = "NetBox plugin for synchronizing Proxmox inventory data"
 readme = "README.md"
 authors = [

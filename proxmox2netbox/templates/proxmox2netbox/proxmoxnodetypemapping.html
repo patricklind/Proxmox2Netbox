@@ -1,0 +1,37 @@
+{% extends 'generic/object.html' %}
+
+{% block content %}
+    <div class="row mb-3">
+        <div class="col col-md-6">
+            <div class="card">
+                <h5 class="card-header">Node Device Type Mapping</h5>
+                <div class="card-body">
+                    <table class="table table-hover attr-table">
+                        <tr>
+                            <th scope="row">Endpoint</th>
+                            <td>
+                                <a href="{{ object.endpoint.get_absolute_url }}">{{ object.endpoint }}</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Node Name</th>
+                            <td><strong>{{ object.node_name }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Device Type</th>
+                            <td>
+                                <a href="{{ object.device_type.get_absolute_url }}">
+                                    {{ object.device_type.manufacturer }} {{ object.device_type.model }}
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            {% include 'inc/panels/custom_fields.html' %}
+        </div>
+        <div class="col col-md-6">
+            {% include 'inc/panels/tags.html' %}
+        </div>
+    </div>
+{% endblock %}

@@ -19,6 +19,12 @@ from .sync_process import (
     SyncProcessListView,
     SyncProcessView,
 )
+from .node_type_mapping import (
+    ProxmoxNodeTypeMappingView,
+    ProxmoxNodeTypeMappingListView,
+    ProxmoxNodeTypeMappingEditView,
+    ProxmoxNodeTypeMappingDeleteView,
+)
 
 from proxmox2netbox.models import ProxmoxEndpoint
 
@@ -29,6 +35,10 @@ __all__ = (
     "ProxmoxEndpointEditView",
     "ProxmoxEndpointListView",
     "ProxmoxEndpointView",
+    "ProxmoxNodeTypeMappingView",
+    "ProxmoxNodeTypeMappingListView",
+    "ProxmoxNodeTypeMappingEditView",
+    "ProxmoxNodeTypeMappingDeleteView",
     "SyncProcessAddView",
     "SyncProcessDeleteView",
     "SyncProcessEditView",

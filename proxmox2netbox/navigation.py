@@ -21,6 +21,14 @@ proxmox_endpoints_item = PluginMenuItem(
     )
 )
 
+node_type_mappings_item = PluginMenuItem(
+    link='plugins:proxmox2netbox:proxmoxnodetypemapping_list',
+    link_text='Node Device Type Mappings',
+    buttons=(
+        PluginMenuButton('plugins:proxmox2netbox:proxmoxnodetypemapping_add', 'Add Mapping', 'mdi mdi-plus'),
+    )
+)
+
 menu = PluginMenu(
     label='Proxmox2NetBox',
     groups=(
@@ -30,6 +38,7 @@ menu = PluginMenu(
             )
          ),
         ('Endpoints', (proxmox_endpoints_item,)),
+        ('Configuration', (node_type_mappings_item,)),
     ),
     icon_class='mdi mdi-dns'
 )

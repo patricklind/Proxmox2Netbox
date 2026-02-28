@@ -15,7 +15,7 @@ from virtualization.models import Cluster, ClusterType, VirtualDisk, VMInterface
 from proxmoxer import ProxmoxAPI
 
 from proxmox2netbox.choices import ProxmoxModeChoices, SyncStatusChoices, SyncTypeChoices
-from proxmox2netbox.models import ProxmoxEndpoint
+from proxmox2netbox.models import ProxmoxEndpoint, ProxmoxNodeTypeMapping
 
 logger = logging.getLogger(__name__)
 
@@ -540,8 +540,17 @@ def _sync_nodes(session, cluster, base):
     client = session.client
     tag = base['tag']
     site = base['site']
-    device_type = base['device_type']
+    endpoint_device_type = base['device_type']
     node_role = base['node_role']
+
+    # Build per-node device type override map from the mapping table.
+    node_type_map = {
+        m.node_name: m.device_type
+        for m in ProxmoxNodeTypeMapping.objects.filter(
+            endpoint=session.endpoint
+        ).select_related('device_type')
+    }
+
     nodes_raw = session.client.nodes.get() or []
     seen_names = set()
     for node_data in nodes_raw:
@@ -551,13 +560,18 @@ def _sync_nodes(session, cluster, base):
         seen_names.add(node_name)
         raw_status = node_data.get('status', '')
         status = _status_from_proxmox(raw_status)
+
+        # Explicit per-node mapping takes priority over the endpoint default.
+        mapped_type = node_type_map.get(node_name)
+
         device = Device.objects.filter(name=node_name, cluster=cluster).order_by('pk').first()
         if device is None:
+            # New node: use mapping if available, else endpoint default.
             device = Device.objects.create(
                 name=node_name,
                 cluster=cluster,
                 site=site,
-                device_type=device_type,
+                device_type=mapped_type if mapped_type is not None else endpoint_device_type,
                 role=node_role,
                 status=status,
             )
@@ -569,12 +583,14 @@ def _sync_nodes(session, cluster, base):
             if not device.cluster_id == cluster.pk:
                 device.cluster = cluster
                 update_fields.append('cluster')
-            if not device.device_type_id == device_type.pk:
-                device.device_type = device_type
-                update_fields.append('device_type')
             if not device.role_id == node_role.pk:
                 device.role = node_role
                 update_fields.append('role')
+            # Only update device_type when there is an explicit per-node mapping.
+            # Without a mapping we leave whatever the user has set in NetBox.
+            if mapped_type is not None and not device.device_type_id == mapped_type.pk:
+                device.device_type = mapped_type
+                update_fields.append('device_type')
             if update_fields:
                 device.save(update_fields=update_fields)
         _safe_add_tag(device, tag)

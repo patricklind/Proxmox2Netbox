@@ -9,6 +9,7 @@ from netbox.tables.columns import BooleanColumn
 # Proxmox2NetBox Imports
 from proxmox2netbox.models import (
     ProxmoxEndpoint,
+    ProxmoxNodeTypeMapping,
     SyncProcess,
 )
 
@@ -67,3 +68,14 @@ class ProxmoxEndpointTable(NetBoxTable):
             'pk', 'name', 'domain', 'ip_address', 'port', 'mode',
             'version', 'verify_ssl'
         )
+
+
+class ProxmoxNodeTypeMappingTable(NetBoxTable):
+    endpoint = tables.Column(linkify=True, verbose_name=_('Endpoint'))
+    node_name = tables.Column(verbose_name=_('Node Name'))
+    device_type = tables.Column(linkify=True, verbose_name=_('Device Type'))
+
+    class Meta(NetBoxTable.Meta):
+        model = ProxmoxNodeTypeMapping
+        fields = ('pk', 'id', 'endpoint', 'node_name', 'device_type', 'actions')
+        default_columns = ('pk', 'endpoint', 'node_name', 'device_type')
