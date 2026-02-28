@@ -18,11 +18,14 @@ This project is plugin-only:
 
 ## What Sync Covers
 
-- Proxmox nodes -> NetBox `dcim.Device`
-- Proxmox QEMU/LXC VMs -> NetBox `virtualization.VirtualMachine`
-- VM interfaces -> NetBox `virtualization.VMInterface`
-- Virtual disks (size + VM association)
-- Interface IP assignment when deterministic data is available (best effort)
+- Proxmox nodes → NetBox `dcim.Device`
+- Proxmox QEMU/LXC VMs → NetBox `virtualization.VirtualMachine`
+- VM interfaces → NetBox `virtualization.VMInterface` with per-interface IP assignment
+- QEMU guest-agent IPs as fallback when static VM config has no IPs (MAC-based interface matching)
+- Stale IPs removed when no longer present in Proxmox config
+- Endpoint-level Site and VRF mapping (devices/IPs placed in the configured NetBox Site/VRF)
+- Per-endpoint Node Device Type (real hardware model, e.g. Dell PowerEdge R740)
+- Per-node Device Type Mapping for individual node overrides
 - Endpoint metadata refresh (`mode`, `version`, `repoid`, cluster name)
 - Sync process tracking (`SyncProcess`)
 

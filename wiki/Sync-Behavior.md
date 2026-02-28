@@ -2,22 +2,39 @@
 
 ## Covered objects
 
-- Proxmox nodes -> NetBox `dcim.Device`
-- QEMU/LXC VMs -> NetBox `virtualization.VirtualMachine`
-- VM interfaces -> NetBox `virtualization.VMInterface`
-- Virtual disks -> add/update/delete per VM
+- Proxmox nodes → NetBox `dcim.Device`
+- QEMU/LXC VMs → NetBox `virtualization.VirtualMachine`
+- VM interfaces → NetBox `virtualization.VMInterface`
 - Endpoint metadata refresh (`mode`, `version`, `repoid`, cluster name)
+- Sync process tracking (`SyncProcess`)
 
-## IP assignment (best effort)
+## IP assignment
 
-- Plugin attempts interface IP assignment only when data is available and deterministic.
-- Sync must not fail if IP information is missing or ambiguous.
+IPs are synced from Proxmox VM config (`net0`, `net1`, …) to each `VMInterface` individually.
+
+- Each interface gets only its own IPs (keyed by interface index from Proxmox config).
+- **QEMU guest agent fallback:** when VM config has no static IPs, the plugin queries the guest agent and matches IPs to interfaces by MAC address.
+- IPs no longer present in Proxmox config are removed from NetBox (stale cleanup).
+- IPs are assigned to the VRF configured on the endpoint (if set).
+
+## Device type assignment (nodes)
+
+Proxmox nodes are synced as NetBox `dcim.Device`. The device type is determined in this priority order:
+
+1. **Per-node mapping** — if a `ProxmoxNodeTypeMapping` exists for the node name, that DeviceType is used.
+2. **Endpoint device type** — if `netbox_device_type` is set on the endpoint, that DeviceType is used.
+3. **Generic fallback** — a generic *Proxmox Node* DeviceType (manufacturer: *Proxmox*) is created and used.
+
+## Site and VRF placement
+
+- If `netbox_site` is set on the endpoint, synced nodes and VMs are placed in that NetBox Site.
+- If `netbox_vrf` is set on the endpoint, synced IP addresses are assigned to that VRF.
 
 ## Execution paths
 
-- UI actions in plugin views
+- UI actions in plugin views (`Plugins -> Proxmox2NetBox`)
 - NetBox Job wrapper: `Proxmox2NetBoxSyncJob`
 
-## Stability guarantees
+## Idempotency
 
-- Sync mapping and flow should not be changed without test coverage and explicit documentation.
+Sync is idempotent — re-running produces the same result as the previous run. Objects are matched by stable keys (node name, VM name, interface name) and updated in place.
