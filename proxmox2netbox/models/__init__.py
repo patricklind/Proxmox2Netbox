@@ -18,11 +18,14 @@ class CommonProperties:
     
     @property
     def url(self) -> str:
-        """Construct the full URL for the Proxmox endpoint."""
+        """Construct the full URL for the Proxmox endpoint.
+
+        Always uses HTTPS — verify_ssl controls certificate verification only,
+        not the transport protocol. Proxmox API is always served over HTTPS.
+        """
         try:
-            protocol = 'https' if self.verify_ssl else 'http'
             host = self.domain if self.domain else self.ip
-            return f"{protocol}://{host}:{self.port}"
+            return f"https://{host}:{self.port}"
         except Exception as e:
             return f"Error: {e}"
 

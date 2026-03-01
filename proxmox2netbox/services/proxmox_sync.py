@@ -31,6 +31,15 @@ _QEMU_NIC_MODELS = frozenset({
     'ne2k_pci', 'ne2k_isa', 'pcnet', 'i82551', 'i82557b', 'i82559er',
 })
 
+# Pre-compiled regex patterns — defined once at module level for performance.
+_RE_MAC = re.compile(r'^[0-9A-F]{2}(:[0-9A-F]{2}){5}$')
+_RE_NET_KEY = re.compile(r'^net\d+$')
+_RE_NET_CAPTURE = re.compile(r'^net(\d+)$')
+_RE_IPCONFIG_KEY = re.compile(r'^ipconfig(\d+)$')
+_RE_LXC_DISK = re.compile(r'^(rootfs|mp\d+)$')
+_RE_QEMU_DISK = re.compile(r'^(virtio|scsi|sata|ide|efidisk|tpmstate)\d+$')
+_RE_SIZE_TOKEN = re.compile(r'^(\d+(?:\.\d+)?)([KMGT]?)$')
+
 
 class ProxmoxSyncError(Exception):
     pass
@@ -86,7 +95,7 @@ def _auth_options(endpoint):
         options.append(('password', {'password': password}))
     if not options:
         raise ProxmoxSyncError(
-            'Endpoint ' + str(endpoint) + ' has no usable credentials. Provide password or token name/value.'
+            f'Endpoint {endpoint} has no usable credentials. Provide password or token name/value.'
         )
     return options
 
@@ -94,7 +103,7 @@ def connect_endpoint(endpoint):
     hosts = _endpoint_hosts(endpoint)
     if not hosts:
         raise ProxmoxSyncError(
-            'Endpoint ' + str(endpoint) + ' has neither domain nor IP address configured.'
+            f'Endpoint {endpoint} has neither domain nor IP address configured.'
         )
     auth_options = _auth_options(endpoint)
     connection_errors = []
@@ -111,9 +120,9 @@ def connect_endpoint(endpoint):
                 version = client.version.get()
                 return EndpointSession(endpoint=endpoint, client=client, host=host, version=version or {})
             except Exception as exc:
-                connection_errors.append(host + ' via ' + auth_type + ': ' + str(exc))
+                connection_errors.append(f'{host} via {auth_type}: {exc}')
     raise ProxmoxSyncError(
-        'Unable to connect to endpoint ' + str(endpoint) + '. Attempts: ' + ' | '.join(connection_errors)
+        f'Unable to connect to endpoint {endpoint}. Attempts: {" | ".join(connection_errors)}'
     )
 
 
@@ -250,7 +259,7 @@ def _extract_mac(net_value):
         k_lower = k.lower()
         if k_lower in _QEMU_NIC_MODELS or k_lower == 'hwaddr':
             mac = v.strip().upper()
-            if re.match(r'^[0-9A-F]{2}(:[0-9A-F]{2}){5}$', mac):
+            if _RE_MAC.match(mac):
                 return mac
     return None
 
@@ -279,7 +288,7 @@ def _iface_description(net_value):
 def _extract_vm_config_networks(config):
     nets = []
     for key, value in config.items():
-        if re.match(r'^net\d+$', key):
+        if _RE_NET_KEY.match(key):
             idx = int(key[3:])
             nets.append((idx, key, str(value)))
     nets.sort(key=lambda x: x[0])
@@ -288,7 +297,7 @@ def _extract_vm_config_networks(config):
 
 def _size_token_to_mb(token):
     token = token.strip().upper()
-    m = re.match(r'^(\d+(?:\.\d+)?)([KMGT]?)$', token)
+    m = _RE_SIZE_TOKEN.match(token)
     if not m:
         return None
     num = float(m.group(1))
@@ -316,9 +325,9 @@ def _fetch_vm_config(client, node, vm_type, vmid):
 def _extract_vm_config_disks(vm_type, config):
     disks = []
     if vm_type == 'lxc':
-        disk_keys = [k for k in config if re.match(r'^(rootfs|mp\d+)$', k)]
+        disk_keys = [k for k in config if _RE_LXC_DISK.match(k)]
     else:
-        disk_keys = [k for k in config if re.match(r'^(virtio|scsi|sata|ide|efidisk|tpmstate)\d+$', k)]
+        disk_keys = [k for k in config if _RE_QEMU_DISK.match(k)]
     for key in disk_keys:
         value = str(config[key])
         size_mb = None
@@ -341,7 +350,7 @@ def _extract_interface_ips(config, vm_type):
     if vm_type == 'lxc':
         # LXC: IPs are inline in the net<N> key itself (e.g. net0=...,ip=10.0.0.5/24,...)
         for key, value in config.items():
-            m = re.match(r'^net(\d+)$', key)
+            m = _RE_NET_CAPTURE.match(key)
             if not m:
                 continue
             idx = int(m.group(1))
@@ -358,7 +367,7 @@ def _extract_interface_ips(config, vm_type):
     else:
         # QEMU: IPs are in ipconfig<N> keys that map 1:1 to net<N>
         for key, value in config.items():
-            m = re.match(r'^ipconfig(\d+)$', key)
+            m = _RE_IPCONFIG_KEY.match(key)
             if not m:
                 continue
             idx = int(m.group(1))

@@ -72,7 +72,10 @@ class ProxmoxEndpointSerializer(NetBoxModelSerializer):
     )
     ip_address = IPAddressSerializer()
     domain = serializers.CharField(required=False, allow_null=True)
-    
+    # Credentials are write-only: accepted on create/update but never returned in responses.
+    password = serializers.CharField(required=False, allow_null=True, write_only=True)
+    token_value = serializers.CharField(required=False, write_only=True)
+
     class Meta:
         model = ProxmoxEndpoint
         fields = (
