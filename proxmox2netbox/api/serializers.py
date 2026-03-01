@@ -104,10 +104,10 @@ class ProxmoxEndpointSerializer(NetBoxModelSerializer):
 
         if not password:
             if token_name and not token_value:
-                raise serializers.ValidationError({'token_value': 'Token Value is required when Token Name is set.'})
+                raise serializers.ValidationError({'token_value': 'Token Value is required when Token Name is set.'})  # nosec B105
 
             if token_value and not token_name:
-                raise serializers.ValidationError({'token_name': 'Token Name is required when Token Value is set.'})
+                raise serializers.ValidationError({'token_name': 'Token Name is required when Token Value is set.'})  # nosec B105
 
             if not (token_name and token_value):
                 raise serializers.ValidationError(
