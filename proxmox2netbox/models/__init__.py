@@ -95,7 +95,7 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
         default='',
     )
     verify_ssl = models.BooleanField(
-        default=False,
+        default=True,
         verbose_name=_('Verify SSL'),
         help_text=_('Choose or not to verify SSL certificate of the Proxmox Endpoint'),
     )
@@ -159,8 +159,9 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
                 )
 
     def __str__(self):
-        return f"{self.name} ({self.ip_address})"
-    
+        address = self.domain or (str(self.ip_address.address).split('/')[0] if self.ip_address else None) or 'no address'
+        return f"{self.name} ({address})"
+
     def get_absolute_url(self):
         return reverse('plugins:proxmox2netbox:proxmoxendpoint', args=[self.pk])
 

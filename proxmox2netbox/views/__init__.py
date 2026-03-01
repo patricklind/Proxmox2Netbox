@@ -1,7 +1,7 @@
+import pathlib
+
 from django.shortcuts import render
 from django.views import View
-
-from proxmox2netbox import github
 
 from .cards import get_proxmox_card
 from .keepalive_status import get_service_status
@@ -107,12 +107,20 @@ class ContributingView(View):
         """Get request."""
 
         title = "Contributing to Proxmox2NetBox Project"
-        
+        content = None
+        for candidate in (
+            pathlib.Path(__file__).parent.parent / 'CONTRIBUTING.md',
+            pathlib.Path(__file__).parent.parent.parent / 'CONTRIBUTING.md',
+        ):
+            if candidate.is_file():
+                content = candidate.read_text(encoding='utf-8')
+                break
+
         return render(
             request,
             self.template_name,
             {
-                "html": github.get(filename = "CONTRIBUTING.md"),
+                "html": content,
                 "title": title,
             }
         )
