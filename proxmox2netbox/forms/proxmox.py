@@ -1,5 +1,6 @@
 # Django Imports
 from django import forms
+from django.forms import PasswordInput
 
 # NetBox Imports
 from netbox.forms import NetBoxModelForm, NetBoxModelFilterSetForm
@@ -83,8 +84,12 @@ class ProxmoxEndpointForm(NetBoxModelForm):
             'name', 'ip_address', 'domain', 'port', 'username',
             'password', 'token_name', 'token_value', 'verify_ssl',
             'netbox_site', 'netbox_vrf', 'netbox_device_type',
-            'tags'
+            'tags',
         )
+        widgets = {
+            'password': PasswordInput(render_value=True),
+            'token_value': PasswordInput(render_value=True),
+        }
 
 
 class ProxmoxEndpointFilterForm(NetBoxModelFilterSetForm):
