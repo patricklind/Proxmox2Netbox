@@ -1,6 +1,5 @@
 import ipaddress as _ipaddress
 import logging
-import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -16,6 +15,16 @@ from proxmoxer import ProxmoxAPI
 
 from proxmox2netbox.choices import ProxmoxModeChoices, SyncStatusChoices, SyncTypeChoices
 from proxmox2netbox.models import ProxmoxEndpoint, ProxmoxNodeTypeMapping
+from proxmox2netbox.services._parse import (
+    QEMU_NIC_MODELS as _QEMU_NIC_MODELS,
+    extract_interface_ips as _extract_interface_ips,
+    extract_mac as _extract_mac,
+    extract_vm_config_disks as _extract_vm_config_disks,
+    extract_vm_config_networks as _extract_vm_config_networks,
+    iface_description as _iface_description,
+    size_token_to_mb as _size_token_to_mb,
+    status_from_proxmox as _status_from_proxmox,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,20 +34,6 @@ LEGACY_MANAGED_TAG_SLUGS = (
     'proxmox2netbox',
     'proxmox2netbox-plugin',
 )
-
-_QEMU_NIC_MODELS = frozenset({
-    'virtio', 'e1000', 'e1000e', 'rtl8139', 'vmxnet3',
-    'ne2k_pci', 'ne2k_isa', 'pcnet', 'i82551', 'i82557b', 'i82559er',
-})
-
-# Pre-compiled regex patterns — defined once at module level for performance.
-_RE_MAC = re.compile(r'^[0-9A-F]{2}(:[0-9A-F]{2}){5}$')
-_RE_NET_KEY = re.compile(r'^net\d+$')
-_RE_NET_CAPTURE = re.compile(r'^net(\d+)$')
-_RE_IPCONFIG_KEY = re.compile(r'^ipconfig(\d+)$')
-_RE_LXC_DISK = re.compile(r'^(rootfs|mp\d+)$')
-_RE_QEMU_DISK = re.compile(r'^(virtio|scsi|sata|ide|efidisk|tpmstate)\d+$')
-_RE_SIZE_TOKEN = re.compile(r'^(\d+(?:\.\d+)?)([KMGT]?)$')
 
 
 class ProxmoxSyncError(Exception):
@@ -242,77 +237,6 @@ def _upsert_cluster(cluster_name, cluster_type, tag, site=None):
     return cluster
 
 
-def _status_from_proxmox(raw_status):
-    if raw_status == 'running':
-        return 'active'
-    if raw_status in ('stopped', 'paused'):
-        return 'offline'
-    return 'staged'
-
-
-def _extract_mac(net_value):
-    for part in net_value.split(','):
-        part = part.strip()
-        if '=' not in part:
-            continue
-        k, v = part.split('=', 1)
-        k_lower = k.lower()
-        if k_lower in _QEMU_NIC_MODELS or k_lower == 'hwaddr':
-            mac = v.strip().upper()
-            if _RE_MAC.match(mac):
-                return mac
-    return None
-
-def _iface_description(net_value):
-    parts = []
-    model = None
-    for token in net_value.split(','):
-        token = token.strip()
-        if not token or '=' not in token:
-            continue
-        k, v = token.split('=', 1)
-        k_lower = k.lower()
-        if k_lower == 'bridge':
-            parts.append('bridge=' + v)
-        elif k_lower == 'tag':
-            parts.append('vlan=' + v)
-        elif k_lower == 'rate':
-            parts.append('rate=' + v + 'MB/s')
-        elif k_lower in _QEMU_NIC_MODELS:
-            model = k_lower
-    if model:
-        parts.append(model)
-    return ', '.join(parts) if parts else 'Proxmox network interface'
-
-
-def _extract_vm_config_networks(config):
-    nets = []
-    for key, value in config.items():
-        if _RE_NET_KEY.match(key):
-            idx = int(key[3:])
-            nets.append((idx, key, str(value)))
-    nets.sort(key=lambda x: x[0])
-    return nets
-
-
-def _size_token_to_mb(token):
-    token = token.strip().upper()
-    m = _RE_SIZE_TOKEN.match(token)
-    if not m:
-        return None
-    num = float(m.group(1))
-    unit = m.group(2)
-    if unit in ('', 'G'):
-        return int(num * 1024)
-    if unit == 'M':
-        return int(num)
-    if unit == 'K':
-        return max(1, int(num // 1024))
-    if unit == 'T':
-        return int(num * 1024 * 1024)
-    return None
-
-
 def _fetch_vm_config(client, node, vm_type, vmid):
     try:
         if vm_type == 'lxc':
@@ -321,68 +245,6 @@ def _fetch_vm_config(client, node, vm_type, vmid):
     except Exception:
         logger.warning('Failed to fetch config for %s %s on node %s', vm_type, vmid, node)
         return {}
-
-def _extract_vm_config_disks(vm_type, config):
-    disks = []
-    if vm_type == 'lxc':
-        disk_keys = [k for k in config if _RE_LXC_DISK.match(k)]
-    else:
-        disk_keys = [k for k in config if _RE_QEMU_DISK.match(k)]
-    for key in disk_keys:
-        value = str(config[key])
-        size_mb = None
-        for token in value.split(','):
-            token = token.strip()
-            if token.lower().startswith('size='):
-                size_mb = _size_token_to_mb(token[5:])
-                break
-        if size_mb is None:
-            first = value.split(',')[0].strip()
-            if ':' in first:
-                size_mb = _size_token_to_mb(first.split(':')[1])
-        disks.append({'key': key, 'size_mb': size_mb})
-    return disks
-
-
-def _extract_interface_ips(config, vm_type):
-    """Return {net_idx: [ip_string, ...]} — one entry per configured interface."""
-    result = {}
-    if vm_type == 'lxc':
-        # LXC: IPs are inline in the net<N> key itself (e.g. net0=...,ip=10.0.0.5/24,...)
-        for key, value in config.items():
-            m = _RE_NET_CAPTURE.match(key)
-            if not m:
-                continue
-            idx = int(m.group(1))
-            ips = []
-            for token in str(value).split(','):
-                token = token.strip()
-                low = token.lower()
-                if low.startswith('ip=') or low.startswith('ip6='):
-                    addr = token.split('=', 1)[1].strip()
-                    if addr and addr not in ('dhcp', 'auto', 'manual'):
-                        ips.append(addr)
-            if ips:
-                result[idx] = ips
-    else:
-        # QEMU: IPs are in ipconfig<N> keys that map 1:1 to net<N>
-        for key, value in config.items():
-            m = _RE_IPCONFIG_KEY.match(key)
-            if not m:
-                continue
-            idx = int(m.group(1))
-            ips = []
-            for token in str(value).split(','):
-                token = token.strip()
-                low = token.lower()
-                if low.startswith('ip=') or low.startswith('ip6='):
-                    addr = token.split('=', 1)[1].strip()
-                    if addr and addr not in ('dhcp', 'auto'):
-                        ips.append(addr)
-            if ips:
-                result[idx] = ips
-    return result
-
 
 def _try_agent_ips_by_mac(client, node, vmid):
     """Return {MAC_UPPER: [ip_string, ...]} from the QEMU guest agent.
@@ -748,7 +610,7 @@ def get_endpoint_cluster_summary(endpoint):
     return meta
 
 
-def sync_devices(sync_run=None):
+def sync_devices():
     endpoints = ProxmoxEndpoint.objects.all()
     errors = []
     for endpoint in endpoints:
@@ -759,10 +621,10 @@ def sync_devices(sync_run=None):
             logger.exception('sync_devices failed for endpoint %s', endpoint)
             errors.append(str(exc))
     if errors:
-        raise ProxmoxSyncError('sync_devices errors: ' + '; '.join(errors))
+        raise ProxmoxSyncError(f'sync_devices errors: {"; ".join(errors)}')
 
 
-def sync_virtual_machines(sync_run=None):
+def sync_virtual_machines():
     endpoints = ProxmoxEndpoint.objects.all()
     errors = []
     for endpoint in endpoints:
@@ -773,10 +635,10 @@ def sync_virtual_machines(sync_run=None):
             logger.exception('sync_virtual_machines failed for endpoint %s', endpoint)
             errors.append(str(exc))
     if errors:
-        raise ProxmoxSyncError('sync_virtual_machines errors: ' + '; '.join(errors))
+        raise ProxmoxSyncError(f'sync_virtual_machines errors: {"; ".join(errors)}')
 
 
-def sync_full_update(sync_run=None):
+def sync_full_update():
     endpoints = ProxmoxEndpoint.objects.all()
     errors = []
     for endpoint in endpoints:
@@ -787,4 +649,4 @@ def sync_full_update(sync_run=None):
             logger.exception('sync_full_update failed for endpoint %s', endpoint)
             errors.append(str(exc))
     if errors:
-        raise ProxmoxSyncError('sync_full_update errors: ' + '; '.join(errors))
+        raise ProxmoxSyncError(f'sync_full_update errors: {"; ".join(errors)}')
