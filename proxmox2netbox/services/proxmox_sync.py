@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from django.contrib.contenttypes.models import ContentType
-from django.utils import timezone
 
 from dcim.models import Device, DeviceRole, DeviceType, MACAddress, Manufacturer, Site
 from ipam.models import IPAddress
@@ -13,16 +12,14 @@ from virtualization.models import Cluster, ClusterType, VirtualDisk, VMInterface
 
 from proxmoxer import ProxmoxAPI
 
-from proxmox2netbox.choices import ProxmoxModeChoices, SyncStatusChoices, SyncTypeChoices
+from proxmox2netbox.choices import ProxmoxModeChoices, SyncTypeChoices
 from proxmox2netbox.models import ProxmoxEndpoint, ProxmoxNodeTypeMapping
 from proxmox2netbox.services._parse import (
-    QEMU_NIC_MODELS as _QEMU_NIC_MODELS,
     extract_interface_ips as _extract_interface_ips,
     extract_mac as _extract_mac,
     extract_vm_config_disks as _extract_vm_config_disks,
     extract_vm_config_networks as _extract_vm_config_networks,
     iface_description as _iface_description,
-    size_token_to_mb as _size_token_to_mb,
     status_from_proxmox as _status_from_proxmox,
 )
 
@@ -444,7 +441,6 @@ def _set_vm_primary_ips(vm, ip_strings, vrf=None):
 
 
 def _sync_nodes(session, cluster, base):
-    client = session.client
     tag = base['tag']
     site = base['site']
     endpoint_device_type = base['device_type']
