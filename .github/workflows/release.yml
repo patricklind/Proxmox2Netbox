@@ -5,22 +5,88 @@ on:
     tags:
       - "v*"
 
-permissions:
-  contents: write
-  actions: write
-
 jobs:
-  create-release:
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Create GitHub Release from tag
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install lint tools
+        run: pip install ruff bandit
+
+      - name: Lint (ruff)
+        run: ruff check proxmox2netbox/
+
+      - name: Security scan (bandit)
+        run: bandit -r proxmox2netbox/ -ll
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install test dependencies
+        run: pip install pytest
+
+      - name: Run tests
+        run: pytest tests/ -q
+
+  release:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
 
-      # Releases created by workflows may not always emit follow-up workflow events.
-      # Explicitly dispatch package publishing for reliable tag->release->PyPI flow.
-      - name: Trigger PyPI publish workflow
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run publish-python-package.yml --repo "${{ github.repository }}" --ref "${GITHUB_REF_NAME}"
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Validate package metadata
+        run: twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
