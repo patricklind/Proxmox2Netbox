@@ -6,6 +6,15 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [1.2.8] - 2026-03-01
+
+### Fixed
+
+- **Silent exception swallowing removed** — bare `except Exception: pass` blocks narrowed to specific types (`ValueError`, `LookupError`) with `logger.debug` logging so failures appear in logs.
+- **False-positive bandit B105 suppressed** — validation error messages containing "Token" no longer generate spurious security warnings.
+
+---
+
 ## [1.2.7] - 2026-03-01
 
 ### Security
