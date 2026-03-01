@@ -6,6 +6,38 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [1.2.7] - 2026-03-01
+
+### Security
+
+- **API: credentials no longer returned in GET responses** — `password` and `token_value` are now `write_only` in `ProxmoxEndpointSerializer`. Accepted in POST/PATCH but never included in responses.
+- **`ContributingView`: removed SSRF risk** — previously made two unauthenticated HTTP calls to the GitHub API on every page load. Now reads `CONTRIBUTING.md` from the local filesystem. `github.py` and the dead-code `release.py` (which referenced NetBox 2.8/2.9/2.10) have been deleted.
+- **`verify_ssl` default changed to `True`** — new `ProxmoxEndpoint` records default to verifying SSL certificates (migration `0017`). Existing records are unaffected.
+
+### Fixed
+
+- **`ProxmoxEndpoint.__str__` with no IP address** — previously rendered `"Endpoint (None)"`. Now uses `domain`, then bare IP, then `'no address'` as fallback.
+- **`CommonProperties.url` protocol** — used `http://` when `verify_ssl=False`. The `url` property now always uses `https://`; `verify_ssl` controls certificate verification only.
+- **`JournalEntryViewSet`**: `object_id` query param now validated as an integer before ORM filter; returns empty queryset for non-integer input.
+
+### Changed
+
+- **Parse utilities extracted to `_parse.py`** — all side-effect-free Proxmox config parsing functions moved to `proxmox2netbox/services/_parse.py` (no Django/NetBox dependencies). Call sites in `proxmox_sync.py` are unchanged.
+- **Seven regex patterns pre-compiled at module level** in `_parse.py` instead of being recompiled on every loop iteration.
+- **`sync_run=None` parameter removed** from `sync_devices()`, `sync_virtual_machines()`, `sync_full_update()` — the parameter was never used.
+- **`requires-python >= 3.11`** in `pyproject.toml`; removed obsolete 3.8/3.9/3.10 classifiers; streamlined `dev` extras.
+
+### CI/CD
+
+- Updated GitHub Actions to `checkout@v4`, `setup-python@v5`, Python 3.11 + 3.12.
+- Replaced `flake8` with `ruff`, added `bandit` security scan, `build + twine check`, and a `pytest` test job.
+
+### Tests
+
+- **45 unit tests** added (`tests/test_parse.py`) covering all parse utility functions — no Django/NetBox setup required.
+
+---
+
 ## [1.2.6] - 2026-02-28
 
 ### Fixed — **Stale IPs not cleaned up on interfaces with no configured IPs**

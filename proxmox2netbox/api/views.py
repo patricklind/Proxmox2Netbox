@@ -81,29 +81,16 @@ class JournalEntryViewSet(NetBoxModelViewSet):
     serializer_class = JournalEntrySerializer
     
     def get_queryset(self):
-        """
-        Filter journal entries by SyncProcess object_id if provided in query params.
-        
-        This method extends the base queryset to allow filtering journal entries
-        by their associated SyncProcess object. When the 'object_id' query parameter
-        is present, it filters the queryset to only include entries for that specific
-        SyncProcess.
-        
-        Returns:
-            QuerySet: Filtered queryset of JournalEntry objects
-            
-        Example:
-            # Get all journal entries for SyncProcess with ID 1
-            queryset = JournalEntry.objects.filter(
-                assigned_object_type__model='syncprocess',
-                assigned_object_id=1
-            )
-        """
         queryset = super().get_queryset()
-        if 'object_id' in self.request.query_params:
+        raw = self.request.query_params.get('object_id')
+        if raw is not None:
+            try:
+                object_id = int(raw)
+            except (ValueError, TypeError):
+                return queryset.none()
             queryset = queryset.filter(
                 assigned_object_type__model='syncprocess',
-                assigned_object_id=self.request.query_params['object_id']
+                assigned_object_id=object_id,
             )
         return queryset
 
