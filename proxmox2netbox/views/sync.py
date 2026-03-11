@@ -20,7 +20,7 @@ class HtmxHttpRequest(HttpRequest):
 def _run_sync(request: HtmxHttpRequest, template_name: str, sync_callable) -> HttpResponse:
     result = {}
     try:
-        result = sync_callable() or {}
+        result = sync_callable() or {} or {}
         if result.get("errors"):
             messages.warning(
                 request,
