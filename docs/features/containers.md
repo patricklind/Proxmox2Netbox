@@ -19,6 +19,6 @@ LXC container network interfaces (`net0`, `net1`, …) are synced as `VMInterfac
 
 IP assignment follows the same logic as for QEMU VMs:
 - Static IPs from container config
-- Stale IPs removed when no longer present in config
+- Only plugin-managed stale IPs removed when authoritative Proxmox IP data exists
 
 > Note: LXC containers do not support the QEMU guest agent, so the guest-agent IP fallback is not available for containers.

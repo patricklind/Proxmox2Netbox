@@ -6,6 +6,22 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [1.2.9] - 2026-03-16
+
+### Fixed
+
+- **VM interface IP sync no longer deletes manual IP assignments** — interface IP cleanup is now limited to IP addresses previously managed by `proxmox2netbox`. If Proxmox provides no authoritative IPs for an interface, existing NetBox IP assignments are preserved.
+- **Managed IP ownership is now tagged consistently** — IPs created or updated by sync are tagged with the plugin managed tag, allowing safe future cleanup of only plugin-managed addresses.
+
+### Tests
+
+- Added regression coverage for interface IP sync to verify:
+- existing IPs are preserved when Proxmox returns no IP data
+- only plugin-managed stale IPs are deleted when authoritative IPs exist
+- matching IPs keep assignment and update VRF/tag state correctly
+
+---
+
 ## [1.2.8] - 2026-03-01
 
 ### Fixed

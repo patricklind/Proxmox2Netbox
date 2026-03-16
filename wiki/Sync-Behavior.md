@@ -14,7 +14,8 @@ IPs are synced from Proxmox VM config (`net0`, `net1`, …) to each `VMInterface
 
 - Each interface gets only its own IPs (keyed by interface index from Proxmox config).
 - **QEMU guest agent fallback:** when VM config has no static IPs, the plugin queries the guest agent and matches IPs to interfaces by MAC address.
-- IPs no longer present in Proxmox config are removed from NetBox (stale cleanup).
+- Only IPs previously managed by `proxmox2netbox` are removed from NetBox during stale cleanup.
+- If Proxmox provides no authoritative IP data for an interface, existing NetBox IP assignments are preserved.
 - IPs are assigned to the VRF configured on the endpoint (if set).
 
 ## Device type assignment (nodes)

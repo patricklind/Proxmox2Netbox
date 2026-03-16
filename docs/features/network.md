@@ -19,7 +19,7 @@ IPs are assigned per interface — each `VMInterface` only receives the IPs belo
 If `netbox_vrf` is set on the endpoint, all synced IPs are assigned to that VRF.
 
 **Stale cleanup:**
-IPs present in NetBox but no longer in Proxmox config are removed. This runs on every sync — even when the interface has no IPs configured, old IPs are cleaned up.
+Only IPs previously managed by `proxmox2netbox` are eligible for automatic cleanup. Manual IP assignments in NetBox are preserved, and no cleanup is performed when Proxmox provides no authoritative IP data for the interface.
 
 ## What is NOT synced
 

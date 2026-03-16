@@ -22,7 +22,7 @@ This project is plugin-only:
 - Proxmox QEMU/LXC VMs → NetBox `virtualization.VirtualMachine`
 - VM interfaces → NetBox `virtualization.VMInterface` with per-interface IP assignment
 - QEMU guest-agent IPs as fallback when static VM config has no IPs (MAC-based interface matching)
-- Stale IPs removed when no longer present in Proxmox config
+- Plugin-managed stale IPs removed when authoritative Proxmox IP data exists
 - Endpoint-level Site and VRF mapping (devices/IPs placed in the configured NetBox Site/VRF)
 - Per-endpoint Node Device Type (real hardware model, e.g. Dell PowerEdge R740)
 - Per-node Device Type Mapping for individual node overrides

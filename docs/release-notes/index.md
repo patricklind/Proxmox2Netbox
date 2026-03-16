@@ -1,5 +1,22 @@
 # Release Notes
 
+## v1.2.9
+
+### Fixed — Manual VM interface IPs are no longer deleted during sync
+
+Automatic IP cleanup is now limited to IP addresses previously managed by `proxmox2netbox`.
+If Proxmox provides no authoritative IP data for an interface, existing NetBox IP assignments are preserved.
+
+### Added — Regression coverage for interface IP sync
+
+Tests now verify that:
+
+- existing IPs are preserved when Proxmox returns no IP data
+- only plugin-managed stale IPs are deleted when authoritative IPs exist
+- matching IPs retain assignment and update VRF/tag state correctly
+
+---
+
 ## v1.2.6
 
 ### Fixed — Stale IPs not cleaned up on interfaces with no configured IPs
