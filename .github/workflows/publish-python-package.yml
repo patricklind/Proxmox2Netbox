@@ -1,8 +1,9 @@
-name: Publish Python Package (manual)
+name: Publish Python Package
 
-# Manual re-publish only — normal releases are handled by release.yml.
-# Use this to re-publish an existing tag to PyPI without creating a new release.
 on:
+  release:
+    types:
+      - published
   workflow_dispatch:
 
 jobs:
