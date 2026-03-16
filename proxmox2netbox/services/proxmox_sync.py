@@ -282,7 +282,7 @@ def _try_agent_ips_by_mac(client, node, vmid):
         return {}
 
 
-def _sync_iface_ips(vm, iface, ip_strings, vrf=None):
+def _sync_iface_ips(vm, iface, ip_strings, vrf=None, tag=None):
     wanted = set()
     for s in ip_strings:
         try:
@@ -304,6 +304,8 @@ def _sync_iface_ips(vm, iface, ip_strings, vrf=None):
             if vrf is not None and not ip.vrf_id == vrf.pk:
                 ip.vrf = vrf
                 ip.save(update_fields=['vrf'])
+            if tag is not None:
+                _safe_add_tag(ip, tag)
             continue
         create_kwargs = {
             'address': addr,
@@ -312,9 +314,19 @@ def _sync_iface_ips(vm, iface, ip_strings, vrf=None):
         }
         if vrf is not None:
             create_kwargs['vrf'] = vrf
-        IPAddress.objects.create(**create_kwargs)
+        ip = IPAddress.objects.create(**create_kwargs)
+        if tag is not None:
+            _safe_add_tag(ip, tag)
+    if not wanted or tag is None:
+        return
+    ip_content_type = ContentType.objects.get_for_model(IPAddress, for_concrete_model=False)
+    managed_ip_ids = set(TaggedItem.objects.filter(
+        content_type=ip_content_type,
+        object_id__in=[ip.pk for ip in existing if ip.pk is not None],
+        tag__slug=tag.slug,
+    ).values_list('object_id', flat=True))
     for addr, ip in existing_by_addr.items():
-        if addr not in wanted:
+        if ip.pk in managed_ip_ids and addr not in wanted:
             ip.delete()
 
 
@@ -380,7 +392,7 @@ def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_t
                 agent_ips_by_mac = _try_agent_ips_by_mac(client, node, vmid)
             ip_strs = agent_ips_by_mac.get(mac, [])
 
-        _sync_iface_ips(vm, iface, ip_strs, vrf=vrf)
+        _sync_iface_ips(vm, iface, ip_strs, vrf=vrf, tag=tag)
         if ip_strs:
             primary_ip_candidates.extend(ip_strs)
     for name, iface in existing.items():
