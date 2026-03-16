@@ -6,7 +6,7 @@ NetBox plugin for synchronizing Proxmox inventory data into NetBox (NetBox v4).
 
 - NetBox: `>=4.2.0, <5.0.0`
 - Python: `>=3.8`
-- Plugin package version in this repository: `1.2.6`
+- Plugin package version in this repository: `1.2.9`
 
 ## What Works (Current Runtime)
 
@@ -56,7 +56,7 @@ If you run `netbox-docker`, also pin the package in your Docker requirements fil
 
 ```text
 # local_requirements.txt
-proxmox2netbox==1.2.6
+proxmox2netbox==1.2.9
 ```
 
 ### 2. Enable plugin

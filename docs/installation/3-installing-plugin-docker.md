@@ -7,7 +7,7 @@ For `netbox-docker`, install this plugin through the requirements mechanism so i
 Add this line to your `local_requirements.txt` used by your deployment:
 
 ```text
-proxmox2netbox==1.2.6
+proxmox2netbox==1.2.9
 ```
 
 ## 2. Enable plugin
