@@ -2,6 +2,12 @@
 
 NetBox plugin for synchronizing Proxmox inventory data into NetBox (NetBox v4).
 
+> [!WARNING]
+> We are aware that there are issues in the codebase.
+> This is a hobby project maintained in spare time.
+> Fixes and improvements are implemented when time allows.
+> Do not deploy in production without proper validation.
+
 ## Compatibility
 
 - NetBox: `>=4.2.0, <5.0.0`
