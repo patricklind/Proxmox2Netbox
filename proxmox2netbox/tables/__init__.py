@@ -73,9 +73,10 @@ class ProxmoxEndpointTable(NetBoxTable):
 class ProxmoxNodeTypeMappingTable(NetBoxTable):
     endpoint = tables.Column(linkify=True, verbose_name=_('Endpoint'))
     node_name = tables.Column(verbose_name=_('Node Name'))
+    custom_name = tables.Column(verbose_name=_('Custom Name'))
     device_type = tables.Column(linkify=True, verbose_name=_('Device Type'))
 
     class Meta(NetBoxTable.Meta):
         model = ProxmoxNodeTypeMapping
-        fields = ('pk', 'id', 'endpoint', 'node_name', 'device_type', 'actions')
-        default_columns = ('pk', 'endpoint', 'node_name', 'device_type')
+        fields = ('pk', 'id', 'endpoint', 'node_name', 'custom_name', 'device_type', 'actions')
+        default_columns = ('pk', 'endpoint', 'node_name', 'custom_name', 'device_type')

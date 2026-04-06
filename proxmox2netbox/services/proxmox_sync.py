@@ -443,9 +443,15 @@ def _set_vm_primary_ips(vm, ip_strings, vrf=None):
             pass
     update_fields = []
     if not vm.primary_ip4_id == (v4.pk if v4 else None):
+        if v4 is not None:
+            VirtualMachine.objects.filter(primary_ip4=v4).exclude(pk=vm.pk).update(primary_ip4=None)
+            Device.objects.filter(primary_ip4=v4).update(primary_ip4=None)
         vm.primary_ip4 = v4
         update_fields.append('primary_ip4')
     if not vm.primary_ip6_id == (v6.pk if v6 else None):
+        if v6 is not None:
+            VirtualMachine.objects.filter(primary_ip6=v6).exclude(pk=vm.pk).update(primary_ip6=None)
+            Device.objects.filter(primary_ip6=v6).update(primary_ip6=None)
         vm.primary_ip6 = v6
         update_fields.append('primary_ip6')
     if update_fields:
@@ -458,9 +464,9 @@ def _sync_nodes(session, cluster, base):
     endpoint_device_type = base['device_type']
     node_role = base['node_role']
 
-    # Build per-node device type override map from the mapping table.
-    node_type_map = {
-        m.node_name: m.device_type
+    # Build per-node override maps from the mapping table.
+    node_mappings = {
+        m.node_name: m
         for m in ProxmoxNodeTypeMapping.objects.filter(
             endpoint=session.endpoint
         ).select_related('device_type')
@@ -477,13 +483,19 @@ def _sync_nodes(session, cluster, base):
         status = _status_from_proxmox(raw_status)
 
         # Explicit per-node mapping takes priority over the endpoint default.
-        mapped_type = node_type_map.get(node_name)
+        mapping = node_mappings.get(node_name)
+        mapped_type = mapping.device_type if mapping else None
+        device_name = mapping.custom_name or node_name if mapping else node_name
 
-        device = Device.objects.filter(name=node_name, cluster=cluster).order_by('pk').first()
+        # Look up by custom name first, fall back to node name for existing devices.
+        device = Device.objects.filter(name=device_name, cluster=cluster).order_by('pk').first()
+        if device is None and device_name != node_name:
+            device = Device.objects.filter(name=node_name, cluster=cluster).order_by('pk').first()
+
         if device is None:
             # New node: use mapping if available, else endpoint default.
             device = Device.objects.create(
-                name=node_name,
+                name=device_name,
                 cluster=cluster,
                 site=site,
                 device_type=mapped_type if mapped_type is not None else endpoint_device_type,
@@ -492,6 +504,10 @@ def _sync_nodes(session, cluster, base):
             )
         else:
             update_fields = []
+            # Rename device if custom name is set and differs.
+            if device.name != device_name:
+                device.name = device_name
+                update_fields.append('name')
             if not device.status == status:
                 device.status = status
                 update_fields.append('status')
