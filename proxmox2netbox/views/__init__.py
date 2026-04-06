@@ -1,5 +1,6 @@
 import pathlib
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from django.views import View
 
@@ -51,7 +52,7 @@ __all__ = (
     "sync_virtual_machines",
 )
 
-class HomeView(View):
+class HomeView(LoginRequiredMixin, View):
     """
     ## HomeView class-based view to handle incoming GET HTTP requests.
     
@@ -88,7 +89,7 @@ class HomeView(View):
             }
         )
 
-class ContributingView(View):
+class ContributingView(LoginRequiredMixin, View):
     """
     **ContributingView** handles the rendering of the contributing page for the Proxmox2NetBox project.
     

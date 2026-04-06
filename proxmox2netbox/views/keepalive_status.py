@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
@@ -12,6 +13,7 @@ class HtmxHttpRequest(HttpRequest):
     htmx: HtmxDetails
 
 
+@login_required
 @require_GET
 def get_service_status(
     request: HtmxHttpRequest,
