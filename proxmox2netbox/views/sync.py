@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
@@ -39,7 +39,7 @@ def _run_sync(request: HtmxHttpRequest, template_name: str, sync_callable) -> Ht
     return render(request, template_name, {"result": result})
 
 
-@login_required
+@staff_member_required
 @require_GET
 def sync_devices(request: HtmxHttpRequest) -> HttpResponse:
     return _run_sync(
@@ -49,7 +49,7 @@ def sync_devices(request: HtmxHttpRequest) -> HttpResponse:
     )
 
 
-@login_required
+@staff_member_required
 @require_GET
 def sync_virtual_machines(request: HtmxHttpRequest) -> HttpResponse:
     return _run_sync(
@@ -59,7 +59,7 @@ def sync_virtual_machines(request: HtmxHttpRequest) -> HttpResponse:
     )
 
 
-@login_required
+@staff_member_required
 @require_GET
 def sync_full_update(request: HtmxHttpRequest) -> HttpResponse:
     return _run_sync(
