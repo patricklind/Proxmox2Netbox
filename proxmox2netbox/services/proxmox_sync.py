@@ -485,7 +485,7 @@ def _sync_nodes(session, cluster, base):
         # Explicit per-node mapping takes priority over the endpoint default.
         mapping = node_mappings.get(node_name)
         mapped_type = mapping.device_type if mapping else None
-        device_name = mapping.custom_name or node_name if mapping else node_name
+        device_name = (mapping.custom_name or node_name) if mapping else node_name
 
         # Look up by custom name first, fall back to node name for existing devices.
         device = Device.objects.filter(name=device_name, cluster=cluster).order_by('pk').first()
