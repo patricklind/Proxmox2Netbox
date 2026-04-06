@@ -1,6 +1,5 @@
 import pathlib
 
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.shortcuts import render
 from django.views import View
@@ -53,12 +52,12 @@ __all__ = (
     "sync_virtual_machines",
 )
 
-class StaffRequiredMixin(UserPassesTestMixin):
+class SuperuserRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.is_staff
+        return self.request.user.is_authenticated and self.request.user.is_superuser
 
 
-class HomeView(StaffRequiredMixin, View):
+class HomeView(SuperuserRequiredMixin, View):
     """
     ## HomeView class-based view to handle incoming GET HTTP requests.
     
@@ -95,7 +94,7 @@ class HomeView(StaffRequiredMixin, View):
             }
         )
 
-class ContributingView(StaffRequiredMixin, View):
+class ContributingView(SuperuserRequiredMixin, View):
     """
     **ContributingView** handles the rendering of the contributing page for the Proxmox2NetBox project.
     

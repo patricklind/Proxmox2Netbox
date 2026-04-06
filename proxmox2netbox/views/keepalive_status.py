@@ -1,4 +1,4 @@
-from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
@@ -13,7 +13,7 @@ class HtmxHttpRequest(HttpRequest):
     htmx: HtmxDetails
 
 
-@staff_member_required
+@user_passes_test(lambda u: u.is_superuser)
 @require_GET
 def get_service_status(
     request: HtmxHttpRequest,
