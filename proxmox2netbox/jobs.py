@@ -4,7 +4,6 @@ from netbox.jobs import JobFailed, JobRunner
 
 from proxmox2netbox.choices import SyncTypeChoices
 from proxmox2netbox.services.proxmox_sync import (
-    ProxmoxSyncError,
     sync_devices,
     sync_full_update,
     sync_virtual_machines,
@@ -19,21 +18,23 @@ class Proxmox2NetBoxSyncJob(JobRunner):
         description = "Execute Proxmox synchronization using the plugin service layer"
 
     def run(self, sync_type: str = SyncTypeChoices.ALL):
-        try:
-            if sync_type == SyncTypeChoices.DEVICES:
-                return sync_devices()
-            if sync_type == SyncTypeChoices.VIRTUAL_MACHINES:
-                return sync_virtual_machines()
-            if sync_type == SyncTypeChoices.ALL:
-                return sync_full_update()
-            if sync_type == SyncTypeChoices.VIRTUAL_MACHINES_BACKUPS:
-                raise JobFailed("VM backup sync is not available in out-of-the-box mode.")
+        if sync_type == SyncTypeChoices.DEVICES:
+            result = sync_devices()
+        elif sync_type == SyncTypeChoices.VIRTUAL_MACHINES:
+            result = sync_virtual_machines()
+        elif sync_type == SyncTypeChoices.ALL:
+            result = sync_full_update()
+        else:
             raise JobFailed(f"Unsupported sync_type: {sync_type}")
-        except ProxmoxSyncError as exc:
-            raise JobFailed(str(exc)) from exc
+
+        if result and result.get('errors'):
+            raise JobFailed('; '.join(result['errors']))
+        return result
 
 
-def enqueue_sync_job(sync_type: str = SyncTypeChoices.ALL):
-    """Compatibility helper to enqueue the Proxmox2NetBox sync job."""
-
-    return Proxmox2NetBoxSyncJob.enqueue(sync_type=sync_type)
+def enqueue_sync_job(sync_type: str = SyncTypeChoices.ALL, interval=None):
+    """Enqueue the Proxmox2NetBox sync job. Set interval (minutes) for recurring."""
+    kwargs = {'sync_type': sync_type}
+    if interval:
+        kwargs['interval'] = interval
+    return Proxmox2NetBoxSyncJob.enqueue(**kwargs)

@@ -78,19 +78,23 @@ class HomeView(SuperuserRequiredMixin, View):
     
     template_name = 'proxmox2netbox/home.html'
 
-    # service incoming GET HTTP requests
     def get(self, request):
-        """Get request."""
-
         proxmox_endpoint_obj = ProxmoxEndpoint.objects.all()
         if proxmox_endpoint_obj.count() <= 0:
             proxmox_endpoint_obj = None
+
+        last_synced = None
+        if proxmox_endpoint_obj:
+            latest = ProxmoxEndpoint.objects.filter(last_synced__isnull=False).order_by('-last_synced').first()
+            if latest:
+                last_synced = latest.last_synced
 
         return render(
             request,
             self.template_name,
             {
                 'proxmox_endpoint_list': proxmox_endpoint_obj,
+                'last_synced': last_synced,
             }
         )
 

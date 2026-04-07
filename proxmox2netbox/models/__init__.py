@@ -129,6 +129,17 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
         blank=True,
         help_text=_('Device type to assign to synced Proxmox nodes. If not set, one is auto-detected from the node\'s CPU model or a generic "Proxmox Node" type is used.'),
     )
+    last_synced = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('Last Synced'),
+    )
+    last_sync_status = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        verbose_name=_('Last Sync Status'),
+    )
 
     class Meta:
         verbose_name_plural: str = "Proxmox Endpoints"

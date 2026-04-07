@@ -1,5 +1,7 @@
 import ipaddress as _ipaddress
 import logging
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -351,12 +353,12 @@ def _sync_iface_mac(iface, mac):
         existing.save(update_fields=['mac_address'])
 
 
-def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_type=None, config=None, vrf=None):
+def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_type=None, config=None, vrf=None, prefetched_agent_ips=None):
     # Per-interface IPs from Proxmox config (idx → [ip, ...])
     config_ips_by_idx = _extract_interface_ips(config or {}, vm_type or 'qemu')
 
-    # Agent IPs fetched once lazily and keyed by MAC for correct matching
-    agent_ips_by_mac = None
+    # Agent IPs: use prefetched if available, otherwise fetch lazily
+    agent_ips_by_mac = prefetched_agent_ips
 
     existing = {iface.name: iface for iface in VMInterface.objects.filter(virtual_machine=vm)}
     seen_names = set()
@@ -463,6 +465,7 @@ def _sync_nodes(session, cluster, base):
     site = base['site']
     endpoint_device_type = base['device_type']
     node_role = base['node_role']
+    counters = {'created_devices': 0, 'updated_devices': 0}
 
     # Build per-node override maps from the mapping table.
     node_mappings = {
@@ -471,7 +474,6 @@ def _sync_nodes(session, cluster, base):
             endpoint=session.endpoint
         ).select_related('device_type')
     }
-    print(f"[PROXMOX_DEBUG] Node mappings for endpoint {session.endpoint}: { {k: (v.custom_name, v.device_type) for k, v in node_mappings.items()} }", flush=True)
 
     nodes_raw = session.client.nodes.get() or []
     seen_names = set()
@@ -485,7 +487,6 @@ def _sync_nodes(session, cluster, base):
 
         # Explicit per-node mapping takes priority over the endpoint default.
         mapping = node_mappings.get(node_name)
-        print(f"[PROXMOX_DEBUG] Node {node_name!r}: mapping={mapping}, device_name={(mapping.custom_name or node_name) if mapping else node_name!r}", flush=True)
         mapped_type = mapping.device_type if mapping else None
         device_name = (mapping.custom_name or node_name) if mapping else node_name
 
@@ -495,7 +496,6 @@ def _sync_nodes(session, cluster, base):
             device = Device.objects.filter(name=node_name, cluster=cluster).order_by('pk').first()
 
         if device is None:
-            # New node: use mapping if available, else endpoint default.
             device = Device.objects.create(
                 name=device_name,
                 cluster=cluster,
@@ -504,9 +504,9 @@ def _sync_nodes(session, cluster, base):
                 role=node_role,
                 status=status,
             )
+            counters['created_devices'] += 1
         else:
             update_fields = []
-            # Rename device if custom name is set and differs.
             if device.name != device_name:
                 device.name = device_name
                 update_fields.append('name')
@@ -519,15 +519,40 @@ def _sync_nodes(session, cluster, base):
             if not device.role_id == node_role.pk:
                 device.role = node_role
                 update_fields.append('role')
-            # Only update device_type when there is an explicit per-node mapping.
-            # Without a mapping we leave whatever the user has set in NetBox.
             if mapped_type is not None and not device.device_type_id == mapped_type.pk:
                 device.device_type = mapped_type
                 update_fields.append('device_type')
             if update_fields:
                 device.save(update_fields=update_fields)
+                counters['updated_devices'] += 1
         _safe_add_tag(device, tag)
-    return seen_names
+    return counters
+
+
+def _prefetch_vm_data(client, node_name, vms_raw, vm_type, max_workers=8):
+    """Fetch config + agent IPs for all VMs on a node in parallel (pure API, no ORM)."""
+    results = {}
+    if not vms_raw:
+        return results
+
+    def _fetch_one(vm_data):
+        vmid = vm_data.get('vmid')
+        config = _fetch_vm_config(client, node_name, vm_type, vmid)
+        agent_ips = {}
+        if vm_type == 'qemu':
+            agent_ips = _try_agent_ips_by_mac(client, node_name, vmid)
+        return vmid, config, agent_ips
+
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(vms_raw))) as executor:
+        futures = {executor.submit(_fetch_one, vm): vm for vm in vms_raw}
+        for future in as_completed(futures):
+            try:
+                vmid, config, agent_ips = future.result()
+                results[vmid] = {'config': config, 'agent_ips': agent_ips}
+            except Exception:
+                vm = futures[future]
+                results[vm.get('vmid')] = {'config': {}, 'agent_ips': {}}
+    return results
 
 
 def _sync_vms(session, cluster, base):
@@ -537,6 +562,8 @@ def _sync_vms(session, cluster, base):
     lxc_role = base['lxc_role']
     site = base['site']
     vrf = getattr(session.endpoint, 'netbox_vrf', None)
+    counters = {'created_vms': 0, 'updated_vms': 0, 'created_ifaces': 0, 'updated_ifaces': 0,
+                'created_disks': 0, 'updated_disks': 0, 'deleted_disks': 0}
     nodes_raw = client.nodes.get() or []
     for node_data in nodes_raw:
         node_name = node_data.get('node', '')
@@ -551,6 +578,10 @@ def _sync_vms(session, cluster, base):
             except Exception:
                 logger.warning('Failed to fetch %s list from node %s', vm_type, node_name)
                 continue
+
+            # Parallel prefetch of VM configs and agent IPs
+            prefetched = _prefetch_vm_data(client, node_name, vms_raw, vm_type)
+
             for vm_data in vms_raw:
                 vmid = vm_data.get('vmid')
                 vm_name = vm_data.get('name', 'vm-' + str(vmid))
@@ -577,6 +608,7 @@ def _sync_vms(session, cluster, base):
                     if memory_mb is not None:
                         create_kwargs['memory'] = memory_mb
                     vm = VirtualMachine.objects.create(**create_kwargs)
+                    counters['created_vms'] += 1
                 else:
                     update_fields = []
                     if not vm.status == status:
@@ -593,18 +625,25 @@ def _sync_vms(session, cluster, base):
                         update_fields.append('memory')
                     if update_fields:
                         vm.save(update_fields=update_fields)
+                        counters['updated_vms'] += 1
                 _safe_add_tag(vm, tag)
-                config = _fetch_vm_config(client, node_name, vm_type, vmid)
+
+                vm_prefetched = prefetched.get(vmid, {})
+                config = vm_prefetched.get('config', {})
+                agent_ips_by_mac = vm_prefetched.get('agent_ips', {})
+
                 nets = _extract_vm_config_networks(config)
                 primary_ip_candidates = _upsert_vm_interfaces(
                     vm, nets, tag,
                     client=client, node=node_name, vmid=vmid,
                     vm_type=vm_type, config=config, vrf=vrf,
+                    prefetched_agent_ips=agent_ips_by_mac,
                 )
                 disks = _extract_vm_config_disks(vm_type, config)
                 _sync_vm_disks(vm, disks, tag)
                 if primary_ip_candidates:
                     _set_vm_primary_ips(vm, primary_ip_candidates, vrf=vrf)
+    return counters
 
 
 def _upsert_all_for_session(session, sync_type):
@@ -616,10 +655,14 @@ def _upsert_all_for_session(session, sync_type):
     netbox_device_type = getattr(endpoint, 'netbox_device_type', None)
     base = _ensure_base_objects(mode, site=netbox_site, device_type=netbox_device_type)
     cluster = _upsert_cluster(cluster_name, base['cluster_type'], base['tag'], site=base['site'] if netbox_site is None else netbox_site)
+    result = {}
     if sync_type in (SyncTypeChoices.ALL, SyncTypeChoices.DEVICES):
-        _sync_nodes(session, cluster, base)
+        node_counters = _sync_nodes(session, cluster, base)
+        result.update(node_counters)
     if sync_type in (SyncTypeChoices.ALL, SyncTypeChoices.VIRTUAL_MACHINES):
-        _sync_vms(session, cluster, base)
+        vm_counters = _sync_vms(session, cluster, base)
+        result.update(vm_counters)
+    return result
 
 
 def check_endpoint_connection(endpoint):
@@ -636,43 +679,44 @@ def get_endpoint_cluster_summary(endpoint):
     return meta
 
 
-def sync_devices():
+def _run_sync(sync_type):
+    from django.utils import timezone
+    start = time.monotonic()
     endpoints = ProxmoxEndpoint.objects.all()
     errors = []
+    totals = {}
     for endpoint in endpoints:
         try:
             session = connect_endpoint(endpoint)
-            _upsert_all_for_session(session, SyncTypeChoices.DEVICES)
+            result = _upsert_all_for_session(session, sync_type)
+            for k, v in result.items():
+                totals[k] = totals.get(k, 0) + v
+            endpoint.last_synced = timezone.now()
+            endpoint.last_sync_status = 'completed'
+            endpoint.save(update_fields=['last_synced', 'last_sync_status'])
         except Exception as exc:
-            logger.exception('sync_devices failed for endpoint %s', endpoint)
+            logger.exception('sync failed for endpoint %s', endpoint)
             errors.append(str(exc))
+            try:
+                endpoint.last_sync_status = 'failed'
+                endpoint.save(update_fields=['last_sync_status'])
+            except Exception:
+                pass
+    elapsed = time.monotonic() - start
+    totals['endpoints'] = endpoints.count()
+    totals['runtime_seconds'] = round(elapsed, 2)
     if errors:
-        raise ProxmoxSyncError(f'sync_devices errors: {"; ".join(errors)}')
+        totals['errors'] = errors
+    return totals
+
+
+def sync_devices():
+    return _run_sync(SyncTypeChoices.DEVICES)
 
 
 def sync_virtual_machines():
-    endpoints = ProxmoxEndpoint.objects.all()
-    errors = []
-    for endpoint in endpoints:
-        try:
-            session = connect_endpoint(endpoint)
-            _upsert_all_for_session(session, SyncTypeChoices.VIRTUAL_MACHINES)
-        except Exception as exc:
-            logger.exception('sync_virtual_machines failed for endpoint %s', endpoint)
-            errors.append(str(exc))
-    if errors:
-        raise ProxmoxSyncError(f'sync_virtual_machines errors: {"; ".join(errors)}')
+    return _run_sync(SyncTypeChoices.VIRTUAL_MACHINES)
 
 
 def sync_full_update():
-    endpoints = ProxmoxEndpoint.objects.all()
-    errors = []
-    for endpoint in endpoints:
-        try:
-            session = connect_endpoint(endpoint)
-            _upsert_all_for_session(session, SyncTypeChoices.ALL)
-        except Exception as exc:
-            logger.exception('sync_full_update failed for endpoint %s', endpoint)
-            errors.append(str(exc))
-    if errors:
-        raise ProxmoxSyncError(f'sync_full_update errors: {"; ".join(errors)}')
+    return _run_sync(SyncTypeChoices.ALL)
