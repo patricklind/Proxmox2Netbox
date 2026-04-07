@@ -8,18 +8,41 @@
                     <p>Out-of-the-box mode is enabled. Configure only Proxmox credentials and run sync.</p>
                 </div>
                 <div class="d-flex justify-content-center noprint">
-                    <a class="m-2" href="{% url 'plugins:proxmox2netbox:sync_devices' %}">
-                        <button id="sync-nodes-button" class="btn btn-primary">Sync Nodes</button>
-                    </a>
-                    <a class="m-2" href="{% url 'plugins:proxmox2netbox:sync_virtual_machines' %}">
-                        <button id="sync-virtual-machines-button" class="btn btn-primary">Sync Virtual Machines</button>
-                    </a>
-                    <a class="m-2" href="{% url 'plugins:proxmox2netbox:sync_full_update' %}">
-                        <button id="sync-full-update-button" class="btn btn-primary">Full Update Sync</button>
-                    </a>
+                    <button id="sync-nodes-button" class="btn btn-primary m-2 sync-btn"
+                        hx-get="{% url 'plugins:proxmox2netbox:sync_devices' %}"
+                        hx-target="#sync-result"
+                        hx-swap="innerHTML"
+                        hx-indicator="#sync-spinner"
+                        hx-disabled-elt=".sync-btn">
+                        Sync Nodes
+                    </button>
+                    <button id="sync-virtual-machines-button" class="btn btn-primary m-2 sync-btn"
+                        hx-get="{% url 'plugins:proxmox2netbox:sync_virtual_machines' %}"
+                        hx-target="#sync-result"
+                        hx-swap="innerHTML"
+                        hx-indicator="#sync-spinner"
+                        hx-disabled-elt=".sync-btn">
+                        Sync Virtual Machines
+                    </button>
+                    <button id="sync-full-update-button" class="btn btn-primary m-2 sync-btn"
+                        hx-get="{% url 'plugins:proxmox2netbox:sync_full_update' %}"
+                        hx-target="#sync-result"
+                        hx-swap="innerHTML"
+                        hx-indicator="#sync-spinner"
+                        hx-disabled-elt=".sync-btn">
+                        Full Update Sync
+                    </button>
+                </div>
+                <div class="d-flex justify-content-center mt-2">
+                    <div id="sync-spinner" class="htmx-indicator">
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                        Syncing...
+                    </div>
                 </div>
             </div>
         </div>
+
+        <div id="sync-result" class="col-md-8 mx-auto mb-3"></div>
 
         <div class="d-flex justify-content-center flex-nowrap" style="margin-bottom: 15px;">
             <h2>Proxmox2NetBox Configuration</h2>

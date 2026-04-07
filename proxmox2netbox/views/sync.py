@@ -18,7 +18,7 @@ class HtmxHttpRequest(HttpRequest):
     htmx: HtmxDetails
 
 
-def _run_sync(request: HtmxHttpRequest, template_name: str, sync_callable) -> HttpResponse:
+def _run_sync(request: HtmxHttpRequest, template_name: str, partial_template_name: str, sync_callable) -> HttpResponse:
     result = {}
     try:
         result = sync_callable() or {} or {}
@@ -36,6 +36,8 @@ def _run_sync(request: HtmxHttpRequest, template_name: str, sync_callable) -> Ht
         messages.error(request, f"Unexpected sync error: {exc}")
         result = {"errors": [str(exc)]}
 
+    if getattr(request, 'htmx', None):
+        return render(request, partial_template_name, {"result": result})
     return render(request, template_name, {"result": result})
 
 
@@ -45,6 +47,7 @@ def sync_devices(request: HtmxHttpRequest) -> HttpResponse:
     return _run_sync(
         request=request,
         template_name="proxmox2netbox/sync_devices.html",
+        partial_template_name="proxmox2netbox/partials/sync_devices.html",
         sync_callable=sync_devices_service,
     )
 
@@ -55,6 +58,7 @@ def sync_virtual_machines(request: HtmxHttpRequest) -> HttpResponse:
     return _run_sync(
         request=request,
         template_name="proxmox2netbox/sync_virtual_machines.html",
+        partial_template_name="proxmox2netbox/partials/sync_virtual_machines.html",
         sync_callable=sync_virtual_machines_service,
     )
 
@@ -65,5 +69,6 @@ def sync_full_update(request: HtmxHttpRequest) -> HttpResponse:
     return _run_sync(
         request=request,
         template_name="proxmox2netbox/sync_full_update.html",
+        partial_template_name="proxmox2netbox/partials/sync_full_update.html",
         sync_callable=sync_full_update_service,
     )
