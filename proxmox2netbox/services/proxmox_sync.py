@@ -471,6 +471,7 @@ def _sync_nodes(session, cluster, base):
             endpoint=session.endpoint
         ).select_related('device_type')
     }
+    logger.warning("Node mappings for endpoint %s: %s", session.endpoint, {k: (v.custom_name, v.device_type) for k, v in node_mappings.items()})
 
     nodes_raw = session.client.nodes.get() or []
     seen_names = set()
@@ -484,6 +485,7 @@ def _sync_nodes(session, cluster, base):
 
         # Explicit per-node mapping takes priority over the endpoint default.
         mapping = node_mappings.get(node_name)
+        logger.warning("Node %r: mapping=%s, device_name=%r", node_name, mapping, (mapping.custom_name or node_name) if mapping else node_name)
         mapped_type = mapping.device_type if mapping else None
         device_name = (mapping.custom_name or node_name) if mapping else node_name
 
