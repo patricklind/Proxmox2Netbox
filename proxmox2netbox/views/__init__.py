@@ -12,7 +12,7 @@ from .endpoints import (
     ProxmoxEndpointListView,
     ProxmoxEndpointView,
 )
-from .sync import sync_devices, sync_full_update, sync_virtual_machines
+from .sync import sync_devices, sync_full_update, sync_virtual_machines, get_sync_schedule, set_sync_schedule
 from .sync_process import (
     SyncProcessAddView,
     SyncProcessDeleteView,
@@ -47,6 +47,8 @@ __all__ = (
     "SyncProcessView",
     "get_proxmox_card",
     "get_service_status",
+    "get_sync_schedule",
+    "set_sync_schedule",
     "sync_devices",
     "sync_full_update",
     "sync_virtual_machines",

@@ -45,6 +45,12 @@
                     Syncing... This may take a while.
                 </div>
             </div>
+
+            {# Schedule #}
+            <span hx-get="{% url 'plugins:proxmox2netbox:get_sync_schedule' %}"
+                  hx-trigger="load"
+                  hx-swap="outerHTML">
+            </span>
         </div>
     </div>
 

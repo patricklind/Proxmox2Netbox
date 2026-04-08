@@ -1,8 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
-from django.views.decorators.http import require_GET
+from django.shortcuts import render, redirect
+from django.views.decorators.http import require_GET, require_POST
 
 from django_htmx.middleware import HtmxDetails
 
@@ -68,3 +68,70 @@ def sync_full_update(request: HtmxHttpRequest) -> HttpResponse:
         partial_template_name="proxmox2netbox/partials/sync_full_update.html",
         sync_callable=sync_full_update_service,
     )
+
+
+SCHEDULE_JOB_NAME = 'Proxmox2NetBox Sync'
+
+INTERVAL_CHOICES = [
+    (0, 'Disabled'),
+    (60, 'Every 1 hour'),
+    (180, 'Every 3 hours'),
+    (360, 'Every 6 hours'),
+    (720, 'Every 12 hours'),
+    (1440, 'Every 24 hours'),
+]
+
+
+def _get_scheduled_job():
+    from core.models import Job
+    return Job.objects.filter(
+        name=SCHEDULE_JOB_NAME,
+        interval__isnull=False,
+    ).exclude(
+        status__in=('errored', 'failed'),
+    ).order_by('-created').first()
+
+
+@user_passes_test(lambda u: u.is_superuser)
+@require_GET
+def get_sync_schedule(request: HtmxHttpRequest) -> HttpResponse:
+    job = _get_scheduled_job()
+    return render(request, 'proxmox2netbox/partials/sync_schedule.html', {
+        'scheduled_job': job,
+        'interval_choices': INTERVAL_CHOICES,
+        'current_interval': job.interval if job else 0,
+    })
+
+
+@user_passes_test(lambda u: u.is_superuser)
+@require_POST
+def set_sync_schedule(request: HtmxHttpRequest) -> HttpResponse:
+    from core.models import Job
+    from proxmox2netbox.jobs import Proxmox2NetBoxSyncJob
+    from proxmox2netbox.choices import SyncTypeChoices
+
+    interval = int(request.POST.get('interval', 0))
+
+    # Cancel existing scheduled jobs
+    Job.objects.filter(
+        name=SCHEDULE_JOB_NAME,
+        interval__isnull=False,
+    ).exclude(
+        status__in=('errored', 'failed'),
+    ).delete()
+
+    if interval > 0:
+        Proxmox2NetBoxSyncJob.enqueue(
+            sync_type=SyncTypeChoices.ALL,
+            interval=interval,
+        )
+        messages.success(request, f"Scheduled sync every {interval} minutes.")
+    else:
+        messages.success(request, "Scheduled sync disabled.")
+
+    job = _get_scheduled_job()
+    return render(request, 'proxmox2netbox/partials/sync_schedule.html', {
+        'scheduled_job': job,
+        'interval_choices': INTERVAL_CHOICES,
+        'current_interval': job.interval if job else 0,
+    })
