@@ -4,40 +4,38 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <a href="{{ object.get_absolute_url }}" class="fw-bold text-decoration-none">
             <i class="mdi mdi-server-network"></i>
-            {% if cluster_data.name %}{{ cluster_data.name }}{% elif object.name %}{{ object.name }}{% else %}Endpoint #{{ object.pk }}{% endif %}
+            {{ object.name|default:"Endpoint" }}
         </a>
         <div class="d-flex align-items-center gap-2">
-            {% if cluster_data.mode == 'cluster' %}
+            {% if object.mode == 'cluster' %}
                 <span class="badge text-bg-purple"><i class="mdi mdi-server"></i> Cluster</span>
-            {% elif cluster_data.mode == 'standalone' %}
+            {% elif object.mode == 'standalone' %}
                 <span class="badge text-bg-blue"><i class="mdi mdi-server"></i> Standalone</span>
             {% endif %}
-            {% if object.pk %}
-                <span
-                    id="proxmox-status-badge-{{ object.pk }}"
-                    class="badge"
-                    hx-get="{% url 'plugins:proxmox2netbox:keepalive_status' 'proxmox' object.pk %}"
-                    hx-trigger="load"
-                    hx-target="#proxmox-status-badge-{{ object.pk }}"
-                    hx-swap="outerHTML">
-                    <span class="spinner-border spinner-border-sm"></span>
-                </span>
-            {% endif %}
+            <span
+                id="proxmox-status-badge-{{ object.pk }}"
+                class="badge"
+                hx-get="{% url 'plugins:proxmox2netbox:keepalive_status' 'proxmox' object.pk %}"
+                hx-trigger="load"
+                hx-target="#proxmox-status-badge-{{ object.pk }}"
+                hx-swap="outerHTML">
+                <span class="spinner-border spinner-border-sm"></span>
+            </span>
         </div>
     </div>
 
-    {% if cluster_data.error %}
+    {% if error %}
         <div class="alert alert-danger m-2 mb-0 py-1 px-2">
-            <small><i class="mdi mdi-alert"></i> {{ cluster_data.error }}</small>
+            <small><i class="mdi mdi-alert"></i> {{ error }}</small>
         </div>
     {% endif %}
 
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
-            {% if cluster_data.version %}
+            {% if object.version %}
             <tr>
                 <td class="ps-3"><strong>Version</strong></td>
-                <td><span class="badge text-bg-secondary">{{ cluster_data.version }}</span></td>
+                <td><span class="badge text-bg-secondary">{{ object.version }}</span></td>
             </tr>
             {% endif %}
             {% if object.domain %}
@@ -78,12 +76,6 @@
                     {% endif %}
                 </td>
             </tr>
-            {% if cluster_data.nodes %}
-            <tr>
-                <td class="ps-3"><strong>Nodes</strong></td>
-                <td><span class="badge text-bg-secondary">{{ cluster_data.nodes|length }}</span></td>
-            </tr>
-            {% endif %}
         </table>
     </div>
 

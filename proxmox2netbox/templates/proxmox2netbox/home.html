@@ -18,32 +18,26 @@
                     hx-get="{% url 'plugins:proxmox2netbox:sync_devices' %}"
                     hx-target="#sync-result"
                     hx-swap="innerHTML"
-                    hx-indicator="#sync-spinner"
-                    hx-disabled-elt=".sync-btn">
+                    hx-disabled-elt=".sync-btn"
+                    hx-indicator=".sync-btn">
                     <i class="mdi mdi-server"></i> Sync Nodes
                 </button>
                 <button class="btn btn-outline-primary sync-btn"
                     hx-get="{% url 'plugins:proxmox2netbox:sync_virtual_machines' %}"
                     hx-target="#sync-result"
                     hx-swap="innerHTML"
-                    hx-indicator="#sync-spinner"
-                    hx-disabled-elt=".sync-btn">
+                    hx-disabled-elt=".sync-btn"
+                    hx-indicator=".sync-btn">
                     <i class="mdi mdi-monitor"></i> Sync Virtual Machines
                 </button>
                 <button class="btn btn-primary sync-btn"
                     hx-get="{% url 'plugins:proxmox2netbox:sync_full_update' %}"
                     hx-target="#sync-result"
                     hx-swap="innerHTML"
-                    hx-indicator="#sync-spinner"
-                    hx-disabled-elt=".sync-btn">
+                    hx-disabled-elt=".sync-btn"
+                    hx-indicator=".sync-btn">
                     <i class="mdi mdi-refresh"></i> Full Update
                 </button>
-            </div>
-            <div class="d-flex justify-content-center mt-2">
-                <div id="sync-spinner" class="htmx-indicator">
-                    <span class="spinner-border spinner-border-sm" role="status"></span>
-                    Syncing... This may take a while.
-                </div>
             </div>
 
             {# Schedule #}
@@ -69,18 +63,7 @@
                 {% else %}
                     <div class="col-md-4 mb-3">
                 {% endif %}
-                    <span
-                        id="proxmox-card-{{ object.pk }}"
-                        hx-get="{% url 'plugins:proxmox2netbox:proxmox_card' object.pk %}"
-                        hx-trigger="load"
-                        hx-target="#proxmox-card-{{ object.pk }}"
-                        hx-swap="outerHTML">
-                        <div class="card">
-                            <div class="card-body text-center text-muted">
-                                <span class="spinner-border spinner-border-sm"></span> Loading...
-                            </div>
-                        </div>
-                    </span>
+                    {% include "proxmox2netbox/home/proxmox_card.html" with object=object %}
                 </div>
             {% endfor %}
         </div>

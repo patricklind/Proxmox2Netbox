@@ -81,21 +81,14 @@ class HomeView(SuperuserRequiredMixin, View):
     template_name = 'proxmox2netbox/home.html'
 
     def get(self, request):
-        proxmox_endpoint_obj = ProxmoxEndpoint.objects.all()
-        if proxmox_endpoint_obj.count() <= 0:
-            proxmox_endpoint_obj = None
-
-        last_synced = None
-        if proxmox_endpoint_obj:
-            latest = ProxmoxEndpoint.objects.filter(last_synced__isnull=False).order_by('-last_synced').first()
-            if latest:
-                last_synced = latest.last_synced
+        endpoints = ProxmoxEndpoint.objects.select_related('ip_address').all()
+        last_synced = endpoints.filter(last_synced__isnull=False).order_by('-last_synced').values_list('last_synced', flat=True).first()
 
         return render(
             request,
             self.template_name,
             {
-                'proxmox_endpoint_list': proxmox_endpoint_obj,
+                'proxmox_endpoint_list': endpoints if endpoints.exists() else None,
                 'last_synced': last_synced,
             }
         )

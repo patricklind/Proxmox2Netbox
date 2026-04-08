@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 
 from django_htmx.middleware import HtmxDetails
@@ -21,20 +21,17 @@ def _run_sync(request: HtmxHttpRequest, template_name: str, partial_template_nam
     result = {}
     try:
         result = sync_callable() or {}
-        if result.get("errors"):
-            messages.warning(
-                request,
-                f"Sync completed with {len(result['errors'])} error(s).",
-            )
-        else:
-            messages.success(request, "Sync completed successfully.")
     except Exception as exc:  # noqa: BLE001
         result = {"errors": [str(exc)]}
-        messages.error(request, f"Sync error: {exc}")
 
-    if getattr(request, 'htmx', None):
-        return render(request, partial_template_name, {"result": result})
-    return render(request, template_name, {"result": result})
+    is_htmx = getattr(request, 'htmx', None)
+    if not is_htmx:
+        if result.get("errors"):
+            messages.warning(request, f"Sync completed with {len(result['errors'])} error(s).")
+        else:
+            messages.success(request, "Sync completed successfully.")
+        return render(request, template_name, {"result": result})
+    return render(request, partial_template_name, {"result": result})
 
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -87,8 +84,7 @@ def _get_scheduled_job():
     return Job.objects.filter(
         name=SCHEDULE_JOB_NAME,
         interval__isnull=False,
-    ).exclude(
-        status__in=('errored', 'failed'),
+        status__in=('pending', 'scheduled', 'running'),
     ).order_by('-created').first()
 
 
@@ -116,8 +112,7 @@ def set_sync_schedule(request: HtmxHttpRequest) -> HttpResponse:
     Job.objects.filter(
         name=SCHEDULE_JOB_NAME,
         interval__isnull=False,
-    ).exclude(
-        status__in=('errored', 'failed'),
+        status__in=('pending', 'scheduled', 'running'),
     ).delete()
 
     if interval > 0:
