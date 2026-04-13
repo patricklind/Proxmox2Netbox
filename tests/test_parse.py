@@ -34,11 +34,19 @@ class TestStatusFromProxmox:
     def test_running_maps_to_active(self):
         assert status_from_proxmox('running') == 'active'
 
+    def test_online_maps_to_active(self):
+        """Proxmox nodes report 'online' instead of 'running'."""
+        assert status_from_proxmox('online') == 'active'
+
     def test_stopped_maps_to_offline(self):
         assert status_from_proxmox('stopped') == 'offline'
 
     def test_paused_maps_to_offline(self):
         assert status_from_proxmox('paused') == 'offline'
+
+    def test_offline_maps_to_offline(self):
+        """Proxmox nodes report 'offline' instead of 'stopped'."""
+        assert status_from_proxmox('offline') == 'offline'
 
     def test_unknown_maps_to_staged(self):
         assert status_from_proxmox('unknown') == 'staged'

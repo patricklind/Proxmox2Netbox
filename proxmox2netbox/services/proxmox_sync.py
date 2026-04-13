@@ -513,6 +513,9 @@ def _sync_nodes(session, cluster, base):
             if not device.status == status:
                 device.status = status
                 update_fields.append('status')
+            if not device.site_id == site.pk:
+                device.site = site
+                update_fields.append('site')
             if not device.cluster_id == cluster.pk:
                 device.cluster = cluster
                 update_fields.append('cluster')
@@ -614,6 +617,9 @@ def _sync_vms(session, cluster, base):
                     if not vm.status == status:
                         vm.status = status
                         update_fields.append('status')
+                    if site is not None and not vm.site_id == site.pk:
+                        vm.site = site
+                        update_fields.append('site')
                     if not vm.role_id == role.pk:
                         vm.role = role
                         update_fields.append('role')

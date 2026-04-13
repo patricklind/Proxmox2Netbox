@@ -33,10 +33,14 @@ _RE_SIZE_TOKEN = re.compile(r'^(\d+(?:\.\d+)?)([KMGT]?)$')
 # ---------------------------------------------------------------------------
 
 def status_from_proxmox(raw_status: str) -> str:
-    """Map a Proxmox resource status string to a NetBox status slug."""
-    if raw_status == 'running':
+    """Map a Proxmox resource status string to a NetBox status slug.
+
+    Proxmox nodes report ``online`` / ``offline`` while VMs and containers
+    use ``running`` / ``stopped`` / ``paused``.
+    """
+    if raw_status in ('running', 'online'):
         return 'active'
-    if raw_status in ('stopped', 'paused'):
+    if raw_status in ('stopped', 'paused', 'offline'):
         return 'offline'
     return 'staged'
 
