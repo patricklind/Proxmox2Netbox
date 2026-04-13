@@ -300,6 +300,9 @@ def _sync_iface_ips(vm, iface, ip_strings, vrf=None, tag=None):
         assigned_object_id=iface.pk,
     ))
     existing_by_addr = {str(ip.address): ip for ip in existing}
+    # Pre-fetch managed IP IDs so we can identify plugin-owned IPs globally.
+    ip_content_type = ContentType.objects.get_for_model(IPAddress, for_concrete_model=False)
+
     for addr in wanted:
         if addr in existing_by_addr:
             ip = existing_by_addr[addr]
@@ -309,19 +312,51 @@ def _sync_iface_ips(vm, iface, ip_strings, vrf=None, tag=None):
             if tag is not None:
                 _safe_add_tag(ip, tag)
             continue
-        create_kwargs = {
-            'address': addr,
-            'assigned_object_type': content_type,
-            'assigned_object_id': iface.pk,
-        }
-        if vrf is not None:
-            create_kwargs['vrf'] = vrf
-        ip = IPAddress.objects.create(**create_kwargs)
+
+        # Before creating, look for an existing IP with the same address/VRF
+        # that is either orphaned or already managed by this plugin, to avoid
+        # duplicates caused by interface deletion/recreation cycles.
+        vrf_filter = {'vrf': vrf} if vrf is not None else {'vrf__isnull': True}
+        reuse_candidate = None
+        for candidate in IPAddress.objects.filter(address=addr, **vrf_filter):
+            # Prefer unassigned (orphaned) IPs first.
+            if not candidate.assigned_object_id:
+                reuse_candidate = candidate
+                break
+            # Also reuse a managed IP whose previous assignment is gone.
+            if tag is not None and TaggedItem.objects.filter(
+                content_type=ip_content_type,
+                object_id=candidate.pk,
+                tag=tag,
+            ).exists():
+                reuse_candidate = candidate
+                break
+
+        if reuse_candidate is not None:
+            ip = reuse_candidate
+            update_fields = []
+            if ip.assigned_object_type_id != content_type.pk or ip.assigned_object_id != iface.pk:
+                ip.assigned_object_type = content_type
+                ip.assigned_object_id = iface.pk
+                update_fields.extend(['assigned_object_type', 'assigned_object_id'])
+            if vrf is not None and not ip.vrf_id == vrf.pk:
+                ip.vrf = vrf
+                update_fields.append('vrf')
+            if update_fields:
+                ip.save(update_fields=update_fields)
+        else:
+            create_kwargs = {
+                'address': addr,
+                'assigned_object_type': content_type,
+                'assigned_object_id': iface.pk,
+            }
+            if vrf is not None:
+                create_kwargs['vrf'] = vrf
+            ip = IPAddress.objects.create(**create_kwargs)
         if tag is not None:
             _safe_add_tag(ip, tag)
     if not wanted or tag is None:
         return
-    ip_content_type = ContentType.objects.get_for_model(IPAddress, for_concrete_model=False)
     managed_ip_ids = set(TaggedItem.objects.filter(
         content_type=ip_content_type,
         object_id__in=[ip.pk for ip in existing if ip.pk is not None],
