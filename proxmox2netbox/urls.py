@@ -26,6 +26,10 @@ urlpatterns = [
     path('sync/devices', views.sync_devices, name='sync_devices'),
     path('sync/virtual-machines', views.sync_virtual_machines, name='sync_virtual_machines'),
     path('sync/full-update', views.sync_full_update, name='sync_full_update'),
+
+    # Sync Schedule
+    path('sync/schedule/', views.get_sync_schedule, name='get_sync_schedule'),
+    path('sync/schedule/set/', views.set_sync_schedule, name='set_sync_schedule'),
     
     path('keepalive-status/<str:service>/<int:pk>', views.get_service_status, name='keepalive_status'),
     path('proxmox-card/<int:pk>', views.get_proxmox_card, name='proxmox_card'),

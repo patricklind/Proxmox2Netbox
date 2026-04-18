@@ -1,0 +1,23 @@
+<div id="sync-schedule" class="d-flex align-items-center justify-content-center gap-2 mt-3 pt-3 border-top">
+    <i class="mdi mdi-clock-outline text-muted"></i>
+    <form hx-post="{% url 'plugins:proxmox2netbox:set_sync_schedule' %}"
+          hx-target="#sync-schedule"
+          hx-swap="outerHTML"
+          class="d-flex align-items-center gap-2">
+        {% csrf_token %}
+        <select name="interval" class="form-select form-select-sm" style="width: auto;"
+                onchange="this.form.requestSubmit()">
+            {% for value, label in interval_choices %}
+                <option value="{{ value }}" {% if value == current_interval %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    {% if scheduled_job %}
+        <span class="badge text-bg-success"><i class="mdi mdi-check-circle"></i> Active</span>
+        {% if scheduled_job.started %}
+            <small class="text-muted">Last run: {{ scheduled_job.started|timesince }} ago</small>
+        {% endif %}
+    {% else %}
+        <span class="badge text-bg-secondary">No schedule</span>
+    {% endif %}
+</div>

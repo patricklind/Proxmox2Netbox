@@ -1,5 +1,6 @@
 import pathlib
 
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.shortcuts import render
 from django.views import View
 
@@ -11,7 +12,7 @@ from .endpoints import (
     ProxmoxEndpointListView,
     ProxmoxEndpointView,
 )
-from .sync import sync_devices, sync_full_update, sync_virtual_machines
+from .sync import sync_devices, sync_full_update, sync_virtual_machines, get_sync_schedule, set_sync_schedule
 from .sync_process import (
     SyncProcessAddView,
     SyncProcessDeleteView,
@@ -46,12 +47,19 @@ __all__ = (
     "SyncProcessView",
     "get_proxmox_card",
     "get_service_status",
+    "get_sync_schedule",
+    "set_sync_schedule",
     "sync_devices",
     "sync_full_update",
     "sync_virtual_machines",
 )
 
-class HomeView(View):
+class SuperuserRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.is_superuser
+
+
+class HomeView(SuperuserRequiredMixin, View):
     """
     ## HomeView class-based view to handle incoming GET HTTP requests.
     
@@ -72,23 +80,20 @@ class HomeView(View):
     
     template_name = 'proxmox2netbox/home.html'
 
-    # service incoming GET HTTP requests
     def get(self, request):
-        """Get request."""
-
-        proxmox_endpoint_obj = ProxmoxEndpoint.objects.all()
-        if proxmox_endpoint_obj.count() <= 0:
-            proxmox_endpoint_obj = None
+        endpoints = ProxmoxEndpoint.objects.select_related('ip_address').all()
+        last_synced = endpoints.filter(last_synced__isnull=False).order_by('-last_synced').values_list('last_synced', flat=True).first()
 
         return render(
             request,
             self.template_name,
             {
-                'proxmox_endpoint_list': proxmox_endpoint_obj,
+                'proxmox_endpoint_list': endpoints if endpoints.exists() else None,
+                'last_synced': last_synced,
             }
         )
 
-class ContributingView(View):
+class ContributingView(SuperuserRequiredMixin, View):
     """
     **ContributingView** handles the rendering of the contributing page for the Proxmox2NetBox project.
     

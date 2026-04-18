@@ -1,13 +1,17 @@
 from netbox.plugins import PluginMenuButton, PluginMenuItem, PluginMenu
 
+_PERMS = ['proxmox2netbox.view_proxmoxendpoint']
+
 fullupdate_item = PluginMenuItem(
     link='plugins:proxmox2netbox:home',
     link_text='Full Update',
+    permissions=_PERMS,
 )
 
 sync_processes_item = PluginMenuItem(
     link='plugins:proxmox2netbox:syncprocess_list',
     link_text='Sync Processes',
+    permissions=_PERMS,
 )
 
 """
@@ -16,6 +20,7 @@ sync_processes_item = PluginMenuItem(
 proxmox_endpoints_item = PluginMenuItem(
     link='plugins:proxmox2netbox:proxmoxendpoint_list',
     link_text='Proxmox Endpoints',
+    permissions=_PERMS,
     buttons=(
         PluginMenuButton('plugins:proxmox2netbox:proxmoxendpoint_add', 'Add Proxmox Endpoint', 'mdi mdi-plus'),
     )
@@ -24,6 +29,7 @@ proxmox_endpoints_item = PluginMenuItem(
 node_type_mappings_item = PluginMenuItem(
     link='plugins:proxmox2netbox:proxmoxnodetypemapping_list',
     link_text='Node Device Type Mappings',
+    permissions=_PERMS,
     buttons=(
         PluginMenuButton('plugins:proxmox2netbox:proxmoxnodetypemapping_add', 'Add Mapping', 'mdi mdi-plus'),
     )

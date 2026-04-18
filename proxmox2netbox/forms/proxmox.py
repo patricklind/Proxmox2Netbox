@@ -126,7 +126,7 @@ class ProxmoxNodeTypeMappingForm(NetBoxModelForm):
 
     class Meta:
         model = ProxmoxNodeTypeMapping
-        fields = ('endpoint', 'node_name', 'device_type', 'tags')
+        fields = ('endpoint', 'node_name', 'custom_name', 'device_type', 'tags')
 
 
 class ProxmoxNodeTypeMappingFilterForm(NetBoxModelFilterSetForm):

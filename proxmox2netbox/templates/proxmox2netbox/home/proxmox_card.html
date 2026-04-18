@@ -1,124 +1,96 @@
 {% load static %}
 
-<div class="card">
-    <h2 class="card-header">Proxmox Cluster</h2>
-    <div class="p-1" id="proxmox-connection-error-{{ object.pk }}">
-        {% if cluster_data.error %}
-            <span class="badge text-bg-red">Connection error: {{ cluster_data.error }}</span>
-        {% endif %}
-    </div>
-
-    <div class="flex d-flex flex-row justify-content-center align-items-center p-2 mt-1">
-        <div class="flex d-flex mx-auto position-absolute">
-            <a href="{{ object.get_absolute_url }}">
-                <img src="{% static 'proxmox2netbox/proxmox-logo.svg' %}" alt="Proxmox Logo" width="200px">
-            </a>
+<div class="card h-100">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <a href="{{ object.get_absolute_url }}" class="fw-bold text-decoration-none">
+            <i class="mdi mdi-server-network"></i>
+            {{ object.name|default:"Endpoint" }}
+        </a>
+        <div class="d-flex align-items-center gap-2">
+            {% if object.mode == 'cluster' %}
+                <span class="badge text-bg-purple"><i class="mdi mdi-server"></i> Cluster</span>
+            {% elif object.mode == 'standalone' %}
+                <span class="badge text-bg-blue"><i class="mdi mdi-server"></i> Standalone</span>
+            {% endif %}
+            <span
+                id="proxmox-status-badge-{{ object.pk }}"
+                class="badge"
+                hx-get="{% url 'plugins:proxmox2netbox:keepalive_status' 'proxmox' object.pk %}"
+                hx-trigger="load"
+                hx-target="#proxmox-status-badge-{{ object.pk }}"
+                hx-swap="outerHTML">
+                <span class="spinner-border spinner-border-sm"></span>
+            </span>
         </div>
-
-        {% if object.pk %}
-            <div class="d-flex ms-auto" style="margin: 0 40px 0 0">
-                <span
-                    id="proxmox-status-badge-{{ object.pk }}"
-                    class="proxmox-connection-check badge p-1"
-                    hx-get="{% url 'plugins:proxmox2netbox:keepalive_status' 'proxmox' object.pk %}"
-                    hx-trigger="load"
-                    hx-target="#proxmox-status-badge-{{ object.pk }}"
-                    hx-swap="outerHTML"
-                >Unknown</span>
-            </div>
-        {% endif %}
     </div>
 
-    <div class="card-body">
-        <table class="table table-hover attr-table">
+    {% if error %}
+        <div class="alert alert-danger m-2 mb-0 py-1 px-2">
+            <small><i class="mdi mdi-alert"></i> {{ error }}</small>
+        </div>
+    {% endif %}
+
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            {% if object.version %}
             <tr>
-                <th scope="row"><strong>Proxmox Cluster Name</strong></th>
-                <td>
-                    {% if cluster_data.name %}
-                        <a href="{{ object.get_absolute_url }}">{{ cluster_data.name }}</a>
-                    {% elif object.name %}
-                        <a href="{{ object.get_absolute_url }}">{{ object.name }}</a>
-                    {% else %}
-                        <span class="badge text-bg-grey"><strong>Empty</strong></span>
-                    {% endif %}
-                </td>
+                <td class="ps-3"><strong>Version</strong></td>
+                <td><span class="badge text-bg-secondary">{{ object.version }}</span></td>
             </tr>
-            <tr>
-                <th scope="row"><strong>Proxmox Cluster Mode</strong></th>
-                <td>
-                    {% if cluster_data.mode == 'cluster' %}
-                        <span class="badge text-bg-purple">
-                            <strong><i class="mdi mdi-server"></i></strong> Cluster (Multiple Nodes)
-                        </span>
-                    {% elif cluster_data.mode == 'standalone' %}
-                        <span class="badge text-bg-blue">
-                            <strong><i class="mdi mdi-server"></i></strong> Standalone (Single Node)
-                        </span>
-                    {% else %}
-                        <span class="badge text-bg-grey"><strong>Undefined</strong></span>
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <th scope="row"><strong>Proxmox Version</strong></th>
-                <td>
-                    {% if cluster_data.version %}
-                        <span class="badge text-bg-grey"><strong>{{ cluster_data.version }}</strong></span>
-                    {% else %}
-                        <span class="badge text-bg-grey"><strong>Empty</strong></span>
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <th scope="row"><strong>Proxmox RepoID</strong></th>
-                <td>
-                    {% if cluster_data.repoid %}
-                        <span class="badge text-bg-grey"><strong>{{ cluster_data.repoid }}</strong></span>
-                    {% else %}
-                        <span class="badge text-bg-grey"><strong>Empty</strong></span>
-                    {% endif %}
-                </td>
-            </tr>
+            {% endif %}
             {% if object.domain %}
-                <tr>
-                    <th scope="row"><strong>Domain</strong></th>
-                    <td id="proxmox-domain">{{ object.domain }}</td>
-                </tr>
+            <tr>
+                <td class="ps-3"><strong>Domain</strong></td>
+                <td>{{ object.domain }}</td>
+            </tr>
             {% endif %}
             {% if object.ip_address %}
-                <tr>
-                    <th scope="row"><strong>IP Address</strong></th>
-                    <td><a href="{{ object.ip_address.get_absolute_url }}">{{ object.ip_address }}</a></td>
-                </tr>
+            <tr>
+                <td class="ps-3"><strong>IP</strong></td>
+                <td><a href="{{ object.ip_address.get_absolute_url }}">{{ object.ip_address }}</a></td>
+            </tr>
             {% endif %}
             <tr>
-                <th scope="row"><strong>HTTP Port</strong></th>
+                <td class="ps-3"><strong>Port</strong></td>
                 <td>{{ object.port }}</td>
             </tr>
             <tr>
-                <th scope="row"><strong>Proxmox User</strong></th>
-                <td>{{ object.username }}</td>
+                <td class="ps-3"><strong>Auth</strong></td>
+                <td>
+                    {% if object.token_name %}
+                        <span class="badge text-bg-info">Token</span>
+                    {% elif object.password %}
+                        <span class="badge text-bg-warning">Password</span>
+                    {% else %}
+                        <span class="badge text-bg-danger">None</span>
+                    {% endif %}
+                </td>
             </tr>
             <tr>
-                <th scope="row"><strong>Proxmox Password</strong></th>
-                <td>{% if object.password %}password defined in the model (secret){% else %}(not set){% endif %}</td>
-            </tr>
-            <tr>
-                <th scope="row"><strong>Token Name</strong></th>
-                <td>{% if object.token_name %}{{ object.token_name }}{% else %}(not set){% endif %}</td>
-            </tr>
-            <tr>
-                <th scope="row"><strong>Token Value</strong></th>
-                <td>(secret)</td>
-            </tr>
-            <tr>
-                <th scope="row"><strong>SSL</strong></th>
-                {% if object.verify_ssl %}
-                    <td><span class="text-success"><i class="mdi mdi-check-bold"></i></span></td>
-                {% else %}
-                    <td><span class="text-danger"><i class="mdi mdi-close-thick"></i></span></td>
-                {% endif %}
+                <td class="ps-3"><strong>SSL</strong></td>
+                <td>
+                    {% if object.verify_ssl %}
+                        <span class="text-success"><i class="mdi mdi-check-bold"></i> Verified</span>
+                    {% else %}
+                        <span class="text-warning"><i class="mdi mdi-alert"></i> Disabled</span>
+                    {% endif %}
+                </td>
             </tr>
         </table>
+    </div>
+
+    <div class="card-footer text-muted small d-flex justify-content-between">
+        <span>
+            {% if object.last_synced %}
+                Last sync: {{ object.last_synced|timesince }} ago
+            {% else %}
+                Never synced
+            {% endif %}
+        </span>
+        {% if object.last_sync_status == 'completed' %}
+            <span class="text-success"><i class="mdi mdi-check-circle"></i></span>
+        {% elif object.last_sync_status == 'failed' %}
+            <span class="text-danger"><i class="mdi mdi-alert-circle"></i></span>
+        {% endif %}
     </div>
 </div>

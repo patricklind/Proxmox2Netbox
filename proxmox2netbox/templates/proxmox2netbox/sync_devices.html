@@ -1,33 +1,14 @@
 {% extends 'base/layout.html' %}
 
+{% block title %}Sync Devices{% endblock %}
+
 {% block content %}
     <div class="row mb-3">
         <div class="col col-md-8">
-            <div class="card">
-                <h5 class="card-header">Sync Devices</h5>
-                <div class="card-body">
-                    <p>Device sync completed.</p>
-                    <p>Endpoints processed: <strong>{{ result.endpoints|default:0 }}</strong></p>
-                    <p>Devices created: <strong>{{ result.created_devices|default:0 }}</strong></p>
-                    <p>Devices updated: <strong>{{ result.updated_devices|default:0 }}</strong></p>
-                    {% if result.runtime_seconds %}
-                        <p>Runtime: <strong>{{ result.runtime_seconds|floatformat:2 }}s</strong></p>
-                    {% endif %}
-                    {% if result.errors %}
-                        <hr>
-                        <p><strong>Errors</strong></p>
-                        <ul>
-                            {% for error in result.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
-            </div>
+            {% include "proxmox2netbox/partials/sync_devices.html" %}
         </div>
     </div>
-
-    <br>
-
-    <button class="btn btn-primary" onclick="window.location.href='{% url 'plugins:proxmox2netbox:home' %}'">Return to Proxmox2NetBox Homepage</button>
+    <a class="btn btn-primary" href="{% url 'plugins:proxmox2netbox:home' %}">
+        <i class="mdi mdi-arrow-left"></i> Back to Proxmox2NetBox
+    </a>
 {% endblock %}

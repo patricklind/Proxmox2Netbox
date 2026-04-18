@@ -129,6 +129,17 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
         blank=True,
         help_text=_('Device type to assign to synced Proxmox nodes. If not set, one is auto-detected from the node\'s CPU model or a generic "Proxmox Node" type is used.'),
     )
+    last_synced = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('Last Synced'),
+    )
+    last_sync_status = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        verbose_name=_('Last Sync Status'),
+    )
 
     class Meta:
         verbose_name_plural: str = "Proxmox Endpoints"
@@ -193,6 +204,13 @@ class ProxmoxNodeTypeMapping(NetBoxModel):
         verbose_name=_('Device Type'),
         help_text=_('Device type to assign to this node when syncing.'),
     )
+    custom_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name=_('Custom Name'),
+        help_text=_('Custom device name in NetBox. If blank, the Proxmox node name is used.'),
+    )
 
     class Meta:
         verbose_name = 'Node Device Type Mapping'
@@ -201,7 +219,8 @@ class ProxmoxNodeTypeMapping(NetBoxModel):
         ordering = ('endpoint', 'node_name')
 
     def __str__(self):
-        return f'{self.endpoint.name} / {self.node_name} → {self.device_type}'
+        display = self.custom_name or self.node_name
+        return f'{self.endpoint.name} / {display} → {self.device_type}'
 
     def get_absolute_url(self):
         return reverse('plugins:proxmox2netbox:proxmoxnodetypemapping', args=[self.pk])
