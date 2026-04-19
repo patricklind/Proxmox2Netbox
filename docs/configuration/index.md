@@ -27,6 +27,27 @@ Create at least one endpoint under:
 | `netbox_vrf` | NetBox VRF to assign synced IP addresses to |
 | `netbox_device_type` | NetBox DeviceType for synced Proxmox nodes (e.g. *Dell PowerEdge R740*) |
 
+## Endpoint Sync Controls
+
+Each endpoint has switches for what the sync is allowed to touch:
+
+| Field | Description |
+|---|---|
+| `sync_enabled` | Include or skip the endpoint entirely |
+| `sync_nodes` | Create/update Proxmox nodes as NetBox devices |
+| `sync_qemu_vms` | Create/update QEMU virtual machines |
+| `sync_lxc_containers` | Create/update LXC containers as NetBox virtual machines |
+| `sync_vm_interfaces` | Create/update VM interfaces from Proxmox network config |
+| `sync_vm_ips` | Assign VM interface IPs from Proxmox config and guest-agent data |
+| `sync_guest_agent_ips` | Use QEMU guest-agent data when static config has no IPs |
+| `sync_vm_disks` | Create/update virtual disks from Proxmox disk config |
+| `prune_stale_vm_interfaces` | Delete plugin-managed VM interfaces no longer reported by Proxmox |
+| `prune_stale_vm_ips` | Delete plugin-managed interface IPs no longer reported by Proxmox |
+| `prune_stale_vm_disks` | Delete plugin-managed virtual disks no longer reported by Proxmox |
+
+Defaults preserve the previous behavior: all object types are synced and stale
+plugin-managed VM interfaces, IPs, and disks are pruned.
+
 ## Per-Node Device Type Mapping
 
 For individual node hardware overrides, use:

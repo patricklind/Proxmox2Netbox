@@ -84,6 +84,10 @@ class ProxmoxEndpointForm(NetBoxModelForm):
             'name', 'ip_address', 'domain', 'port', 'username',
             'password', 'token_name', 'token_value', 'verify_ssl',
             'netbox_site', 'netbox_vrf', 'netbox_device_type',
+            'sync_enabled', 'sync_nodes', 'sync_qemu_vms', 'sync_lxc_containers',
+            'sync_vm_interfaces', 'sync_vm_ips', 'sync_guest_agent_ips',
+            'sync_vm_disks', 'prune_stale_vm_interfaces', 'prune_stale_vm_ips',
+            'prune_stale_vm_disks',
             'tags',
         )
         widgets = {
@@ -110,6 +114,22 @@ class ProxmoxEndpointFilterForm(NetBoxModelFilterSetForm):
     mode = forms.MultipleChoiceField(
         choices=ProxmoxModeChoices,
         required=False
+    )
+    sync_enabled = forms.NullBooleanField(
+        required=False,
+        label=_('Sync Enabled'),
+    )
+    sync_nodes = forms.NullBooleanField(
+        required=False,
+        label=_('Sync Nodes'),
+    )
+    sync_qemu_vms = forms.NullBooleanField(
+        required=False,
+        label=_('Sync QEMU VMs'),
+    )
+    sync_lxc_containers = forms.NullBooleanField(
+        required=False,
+        label=_('Sync LXC Containers'),
     )
 
 

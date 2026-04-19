@@ -83,6 +83,10 @@ class ProxmoxEndpointSerializer(NetBoxModelSerializer):
             'token_name', 'token_value', 'username', 'password', 'verify_ssl',
             'mode', 'version', 'repoid',
             'netbox_site', 'netbox_vrf', 'netbox_device_type',
+            'sync_enabled', 'sync_nodes', 'sync_qemu_vms', 'sync_lxc_containers',
+            'sync_vm_interfaces', 'sync_vm_ips', 'sync_guest_agent_ips',
+            'sync_vm_disks', 'prune_stale_vm_interfaces', 'prune_stale_vm_ips',
+            'prune_stale_vm_disks',
             'tags', 'custom_fields', 'created', 'last_updated',
         )
 

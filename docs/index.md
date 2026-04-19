@@ -13,7 +13,7 @@ This project is plugin-only:
 ## Compatibility
 
 - NetBox: `>=4.2.0, <5.0.0`
-- Python: `>=3.8`
+- Python: `>=3.11`
 - Proxmox VE: `>=8.x` (tested baseline)
 
 ## What Sync Covers
@@ -26,6 +26,8 @@ This project is plugin-only:
 - Endpoint-level Site and VRF mapping (devices/IPs placed in the configured NetBox Site/VRF)
 - Per-endpoint Node Device Type (real hardware model, e.g. Dell PowerEdge R740)
 - Per-node Device Type Mapping for individual node overrides
+- Per-endpoint sync controls for nodes, QEMU VMs, LXC containers, VM interfaces,
+  VM IPs, guest-agent IP fallback, virtual disks, and stale-object pruning
 - Endpoint metadata refresh (`mode`, `version`, `repoid`, cluster name)
 - Sync process tracking (`SyncProcess`)
 
@@ -35,7 +37,8 @@ This project is plugin-only:
 2. Enable plugin in NetBox config: `PLUGINS = ["proxmox2netbox"]`
 3. Run migrations/static collection.
 4. Add at least one Proxmox endpoint in plugin UI.
-5. Run sync from plugin home page or queue the NetBox job.
+5. Review the endpoint sync controls if you only want specific object types.
+6. Run sync from plugin home page or queue the NetBox job.
 
 ## Installation Guides
 

@@ -129,6 +129,61 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
         blank=True,
         help_text=_('Device type to assign to synced Proxmox nodes. If not set, one is auto-detected from the node\'s CPU model or a generic "Proxmox Node" type is used.'),
     )
+    sync_enabled = models.BooleanField(
+        default=True,
+        verbose_name=_('Sync Enabled'),
+        help_text=_('Include this endpoint in manual and scheduled sync runs.'),
+    )
+    sync_nodes = models.BooleanField(
+        default=True,
+        verbose_name=_('Sync Nodes'),
+        help_text=_('Create and update Proxmox nodes as NetBox devices.'),
+    )
+    sync_qemu_vms = models.BooleanField(
+        default=True,
+        verbose_name=_('Sync QEMU VMs'),
+        help_text=_('Create and update QEMU virtual machines.'),
+    )
+    sync_lxc_containers = models.BooleanField(
+        default=True,
+        verbose_name=_('Sync LXC Containers'),
+        help_text=_('Create and update LXC containers as NetBox virtual machines.'),
+    )
+    sync_vm_interfaces = models.BooleanField(
+        default=True,
+        verbose_name=_('Sync VM Interfaces'),
+        help_text=_('Create and update VM interfaces from Proxmox network configuration.'),
+    )
+    sync_vm_ips = models.BooleanField(
+        default=True,
+        verbose_name=_('Sync VM IP Addresses'),
+        help_text=_('Assign VM interface IP addresses from Proxmox config and guest-agent data.'),
+    )
+    sync_guest_agent_ips = models.BooleanField(
+        default=True,
+        verbose_name=_('Use Guest Agent IPs'),
+        help_text=_('Use QEMU guest-agent network data when Proxmox static config has no IPs.'),
+    )
+    sync_vm_disks = models.BooleanField(
+        default=True,
+        verbose_name=_('Sync VM Disks'),
+        help_text=_('Create and update NetBox virtual disks from Proxmox VM disk config.'),
+    )
+    prune_stale_vm_interfaces = models.BooleanField(
+        default=True,
+        verbose_name=_('Prune Stale VM Interfaces'),
+        help_text=_('Delete plugin-managed VM interfaces that no longer exist in Proxmox config.'),
+    )
+    prune_stale_vm_ips = models.BooleanField(
+        default=True,
+        verbose_name=_('Prune Stale VM IPs'),
+        help_text=_('Delete plugin-managed interface IPs that no longer exist in Proxmox config.'),
+    )
+    prune_stale_vm_disks = models.BooleanField(
+        default=True,
+        verbose_name=_('Prune Stale VM Disks'),
+        help_text=_('Delete plugin-managed virtual disks that no longer exist in Proxmox config.'),
+    )
     last_synced = models.DateTimeField(
         null=True,
         blank=True,
@@ -171,6 +226,31 @@ class ProxmoxEndpoint(NetBoxModel, CommonProperties):
                 raise ValidationError(
                     _('Provide either username/password or username with both Token Name and Token Value.')
                 )
+        if self.sync_enabled:
+            if not any((self.sync_nodes, self.sync_qemu_vms, self.sync_lxc_containers)):
+                raise ValidationError({
+                    'sync_enabled': _('Enable at least one sync target, or disable this endpoint.')
+                })
+            if self.sync_vm_ips and not self.sync_vm_interfaces:
+                raise ValidationError({
+                    'sync_vm_ips': _('VM IP sync requires VM interface sync.')
+                })
+            if self.sync_guest_agent_ips and not self.sync_vm_ips:
+                raise ValidationError({
+                    'sync_guest_agent_ips': _('Guest-agent IP sync requires VM IP sync.')
+                })
+            if self.prune_stale_vm_interfaces and not self.sync_vm_interfaces:
+                raise ValidationError({
+                    'prune_stale_vm_interfaces': _('Interface pruning requires VM interface sync.')
+                })
+            if self.prune_stale_vm_ips and not self.sync_vm_ips:
+                raise ValidationError({
+                    'prune_stale_vm_ips': _('IP pruning requires VM IP sync.')
+                })
+            if self.prune_stale_vm_disks and not self.sync_vm_disks:
+                raise ValidationError({
+                    'prune_stale_vm_disks': _('Disk pruning requires VM disk sync.')
+                })
 
     def __str__(self):
         address = self.domain or (str(self.ip_address.address).split('/')[0] if self.ip_address else None) or 'no address'

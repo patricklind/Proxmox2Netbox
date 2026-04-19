@@ -284,7 +284,7 @@ def _try_agent_ips_by_mac(client, node, vmid):
         return {}
 
 
-def _sync_iface_ips(vm, iface, ip_strings, vrf=None, tag=None):
+def _sync_iface_ips(vm, iface, ip_strings, vrf=None, tag=None, prune_stale=True):
     wanted = set()
     for s in ip_strings:
         try:
@@ -355,7 +355,7 @@ def _sync_iface_ips(vm, iface, ip_strings, vrf=None, tag=None):
             ip = IPAddress.objects.create(**create_kwargs)
         if tag is not None:
             _safe_add_tag(ip, tag)
-    if not wanted or tag is None:
+    if not prune_stale or not wanted or tag is None:
         return
     managed_ip_ids = set(TaggedItem.objects.filter(
         content_type=ip_content_type,
@@ -388,9 +388,24 @@ def _sync_iface_mac(iface, mac):
         existing.save(update_fields=['mac_address'])
 
 
-def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_type=None, config=None, vrf=None, prefetched_agent_ips=None):
+def _upsert_vm_interfaces(
+    vm,
+    nets,
+    tag,
+    client=None,
+    node=None,
+    vmid=None,
+    vm_type=None,
+    config=None,
+    vrf=None,
+    prefetched_agent_ips=None,
+    sync_ips=True,
+    use_guest_agent_ips=True,
+    prune_stale=True,
+    prune_stale_ips=True,
+):
     # Per-interface IPs from Proxmox config (idx → [ip, ...])
-    config_ips_by_idx = _extract_interface_ips(config or {}, vm_type or 'qemu')
+    config_ips_by_idx = _extract_interface_ips(config or {}, vm_type or 'qemu') if sync_ips else {}
 
     # Agent IPs: use prefetched if available, otherwise fetch lazily
     agent_ips_by_mac = prefetched_agent_ips
@@ -424,21 +439,22 @@ def _upsert_vm_interfaces(vm, nets, tag, client=None, node=None, vmid=None, vm_t
         ip_strs = config_ips_by_idx.get(idx, [])
 
         # Fallback: QEMU guest agent — match by MAC so IPs go to the right interface
-        if not ip_strs and vm_type == 'qemu' and client and node and vmid and mac:
+        if sync_ips and use_guest_agent_ips and not ip_strs and vm_type == 'qemu' and client and node and vmid and mac:
             if agent_ips_by_mac is None:
                 agent_ips_by_mac = _try_agent_ips_by_mac(client, node, vmid)
             ip_strs = agent_ips_by_mac.get(mac, [])
 
-        _sync_iface_ips(vm, iface, ip_strs, vrf=vrf, tag=tag)
+        if sync_ips:
+            _sync_iface_ips(vm, iface, ip_strs, vrf=vrf, tag=tag, prune_stale=prune_stale_ips)
         if ip_strs:
             primary_ip_candidates.extend(ip_strs)
     for name, iface in existing.items():
-        if name not in seen_names:
+        if prune_stale and name not in seen_names:
             iface.delete()
     return primary_ip_candidates
 
 
-def _sync_vm_disks(vm, disks, tag):
+def _sync_vm_disks(vm, disks, tag, prune_stale=True):
     existing = {d.name: d for d in VirtualDisk.objects.filter(virtual_machine=vm)}
     seen = set()
     for disk in disks:
@@ -458,7 +474,7 @@ def _sync_vm_disks(vm, disks, tag):
         _safe_add_tag(vd, tag)
         seen.add(name)
     for name, vd in existing.items():
-        if name not in seen:
+        if prune_stale and name not in seen:
             vd.delete()
 
 
@@ -567,7 +583,7 @@ def _sync_nodes(session, cluster, base):
     return counters
 
 
-def _prefetch_vm_data(client, node_name, vms_raw, vm_type, max_workers=8):
+def _prefetch_vm_data(client, node_name, vms_raw, vm_type, max_workers=8, use_guest_agent_ips=True):
     """Fetch config + agent IPs for all VMs on a node in parallel (pure API, no ORM)."""
     results = {}
     if not vms_raw:
@@ -577,7 +593,7 @@ def _prefetch_vm_data(client, node_name, vms_raw, vm_type, max_workers=8):
         vmid = vm_data.get('vmid')
         config = _fetch_vm_config(client, node_name, vm_type, vmid)
         agent_ips = {}
-        if vm_type == 'qemu':
+        if use_guest_agent_ips and vm_type == 'qemu':
             agent_ips = _try_agent_ips_by_mac(client, node_name, vmid)
         return vmid, config, agent_ips
 
@@ -603,11 +619,20 @@ def _sync_vms(session, cluster, base):
     counters = {'created_vms': 0, 'updated_vms': 0, 'created_ifaces': 0, 'updated_ifaces': 0,
                 'created_disks': 0, 'updated_disks': 0, 'deleted_disks': 0}
     nodes_raw = client.nodes.get() or []
+    endpoint = session.endpoint
+    vm_types = []
+    if getattr(endpoint, 'sync_qemu_vms', True):
+        vm_types.append('qemu')
+    if getattr(endpoint, 'sync_lxc_containers', True):
+        vm_types.append('lxc')
+    if not vm_types:
+        return counters
+
     for node_data in nodes_raw:
         node_name = node_data.get('node', '')
         if not node_name:
             continue
-        for vm_type in ('qemu', 'lxc'):
+        for vm_type in vm_types:
             try:
                 if vm_type == 'lxc':
                     vms_raw = client.nodes(node_name).lxc.get() or []
@@ -617,8 +642,18 @@ def _sync_vms(session, cluster, base):
                 logger.warning('Failed to fetch %s list from node %s', vm_type, node_name)
                 continue
 
-            # Parallel prefetch of VM configs and agent IPs
-            prefetched = _prefetch_vm_data(client, node_name, vms_raw, vm_type)
+            # Parallel prefetch of VM configs and, when enabled, guest-agent IPs.
+            prefetched = _prefetch_vm_data(
+                client,
+                node_name,
+                vms_raw,
+                vm_type,
+                use_guest_agent_ips=(
+                    getattr(endpoint, 'sync_vm_interfaces', True)
+                    and getattr(endpoint, 'sync_vm_ips', True)
+                    and getattr(endpoint, 'sync_guest_agent_ips', True)
+                ),
+            )
 
             for vm_data in vms_raw:
                 vmid = vm_data.get('vmid')
@@ -673,15 +708,27 @@ def _sync_vms(session, cluster, base):
                 config = vm_prefetched.get('config', {})
                 agent_ips_by_mac = vm_prefetched.get('agent_ips', {})
 
-                nets = _extract_vm_config_networks(config)
-                primary_ip_candidates = _upsert_vm_interfaces(
-                    vm, nets, tag,
-                    client=client, node=node_name, vmid=vmid,
-                    vm_type=vm_type, config=config, vrf=vrf,
-                    prefetched_agent_ips=agent_ips_by_mac,
-                )
-                disks = _extract_vm_config_disks(vm_type, config)
-                _sync_vm_disks(vm, disks, tag)
+                primary_ip_candidates = []
+                if getattr(endpoint, 'sync_vm_interfaces', True):
+                    nets = _extract_vm_config_networks(config)
+                    primary_ip_candidates = _upsert_vm_interfaces(
+                        vm, nets, tag,
+                        client=client, node=node_name, vmid=vmid,
+                        vm_type=vm_type, config=config, vrf=vrf,
+                        prefetched_agent_ips=agent_ips_by_mac,
+                        sync_ips=getattr(endpoint, 'sync_vm_ips', True),
+                        use_guest_agent_ips=getattr(endpoint, 'sync_guest_agent_ips', True),
+                        prune_stale=getattr(endpoint, 'prune_stale_vm_interfaces', True),
+                        prune_stale_ips=getattr(endpoint, 'prune_stale_vm_ips', True),
+                    )
+                if getattr(endpoint, 'sync_vm_disks', True):
+                    disks = _extract_vm_config_disks(vm_type, config)
+                    _sync_vm_disks(
+                        vm,
+                        disks,
+                        tag,
+                        prune_stale=getattr(endpoint, 'prune_stale_vm_disks', True),
+                    )
                 if primary_ip_candidates:
                     _set_vm_primary_ips(vm, primary_ip_candidates, vrf=vrf)
     return counters
@@ -697,7 +744,7 @@ def _upsert_all_for_session(session, sync_type):
     base = _ensure_base_objects(mode, site=netbox_site, device_type=netbox_device_type)
     cluster = _upsert_cluster(cluster_name, base['cluster_type'], base['tag'], site=base['site'] if netbox_site is None else netbox_site)
     result = {}
-    if sync_type in (SyncTypeChoices.ALL, SyncTypeChoices.DEVICES):
+    if sync_type in (SyncTypeChoices.ALL, SyncTypeChoices.DEVICES) and getattr(endpoint, 'sync_nodes', True):
         node_counters = _sync_nodes(session, cluster, base)
         result.update(node_counters)
     if sync_type in (SyncTypeChoices.ALL, SyncTypeChoices.VIRTUAL_MACHINES):
@@ -723,7 +770,7 @@ def get_endpoint_cluster_summary(endpoint):
 def _run_sync(sync_type):
     from django.utils import timezone
     start = time.monotonic()
-    endpoints = ProxmoxEndpoint.objects.all()
+    endpoints = ProxmoxEndpoint.objects.filter(sync_enabled=True)
     errors = []
     totals = {}
     for endpoint in endpoints:

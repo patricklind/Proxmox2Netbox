@@ -179,6 +179,24 @@ def test_sync_iface_ips_deletes_only_managed_ips_when_authoritative_ips_exist(mo
     assert tagged_objects == [(ip_manager.created[0], "proxmox2netbox")]
 
 
+def test_sync_iface_ips_can_keep_stale_managed_ips_when_pruning_disabled(monkeypatch):
+    managed_ip = _FakeIP("10.0.0.5/24", pk=1)
+    ip_manager, tagged_objects = _configure_ip_sync_test(monkeypatch, [managed_ip], managed_ids={1})
+
+    _sync_mod._sync_iface_ips(
+        vm=object(),
+        iface=types.SimpleNamespace(pk=10),
+        ip_strings=["10.0.0.6/24"],
+        vrf=None,
+        tag=types.SimpleNamespace(slug="proxmox2netbox"),
+        prune_stale=False,
+    )
+
+    assert managed_ip.deleted is False
+    assert [ip.address for ip in ip_manager.created] == ["10.0.0.6/24"]
+    assert tagged_objects == [(ip_manager.created[0], "proxmox2netbox")]
+
+
 def test_sync_iface_ips_updates_matching_ip_vrf_and_marks_it_managed(monkeypatch):
     existing_ip = _FakeIP("10.0.0.5/24", pk=1, vrf_id=None)
     _, tagged_objects = _configure_ip_sync_test(monkeypatch, [existing_ip], managed_ids={1})
@@ -195,3 +213,43 @@ def test_sync_iface_ips_updates_matching_ip_vrf_and_marks_it_managed(monkeypatch
     assert existing_ip.deleted is False
     assert existing_ip.vrf_id == 7
     assert tagged_objects == [(existing_ip, "proxmox2netbox")]
+
+
+def test_run_sync_filters_disabled_endpoints(monkeypatch):
+    enabled_endpoint = types.SimpleNamespace(
+        name="enabled",
+        last_synced=None,
+        last_sync_status="",
+        save=lambda update_fields=None: None,
+    )
+    disabled_endpoint = types.SimpleNamespace(name="disabled")
+
+    class _EndpointQuerySet(list):
+        def count(self):
+            return len(self)
+
+    class _EndpointManager:
+        def filter(self, **kwargs):
+            assert kwargs == {"sync_enabled": True}
+            return _EndpointQuerySet([enabled_endpoint])
+
+    seen = []
+
+    def _connect(endpoint):
+        seen.append(endpoint.name)
+        return types.SimpleNamespace(endpoint=endpoint)
+
+    monkeypatch.setattr(_sync_mod, "ProxmoxEndpoint", types.SimpleNamespace(objects=_EndpointManager()))
+    monkeypatch.setattr(_sync_mod, "connect_endpoint", _connect)
+    monkeypatch.setattr(
+        _sync_mod,
+        "_upsert_all_for_session",
+        lambda session, sync_type: {"created_vms": 1},
+    )
+
+    result = _sync_mod._run_sync(_sync_mod.SyncTypeChoices.ALL)
+
+    assert seen == ["enabled"]
+    assert disabled_endpoint.name not in seen
+    assert result["created_vms"] == 1
+    assert result["endpoints"] == 1

@@ -1,6 +1,7 @@
 # Virtual Machines
 
-Proxmox QEMU VMs are synced to NetBox as `virtualization.VirtualMachine` objects.
+Proxmox QEMU VMs are synced to NetBox as `virtualization.VirtualMachine`
+objects when `sync_qemu_vms` is enabled on the endpoint.
 
 ## What gets synced
 
@@ -26,11 +27,12 @@ IPs are assigned per interface — each interface only gets its own IPs.
 
 **Sources (in priority order):**
 1. Static IPs from Proxmox VM config (`ip=` field on `net0`, `net1`, …)
-2. QEMU guest agent IPs — matched to the correct interface by MAC address
+2. QEMU guest agent IPs, when `sync_guest_agent_ips` is enabled — matched to the correct interface by MAC address
 
 **VRF:** IPs are placed in the VRF configured on the endpoint (if set).
 
-**Stale cleanup:** IPs no longer present in Proxmox config are removed from NetBox.
+**Stale cleanup:** plugin-managed IPs no longer present in Proxmox config are
+removed from NetBox when `prune_stale_vm_ips` is enabled.
 
 ## Cluster placement
 

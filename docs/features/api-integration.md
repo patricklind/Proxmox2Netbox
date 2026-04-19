@@ -22,6 +22,7 @@ The plugin exposes its own models via NetBox's REST API under `/api/plugins/prox
 
 Available endpoints:
 - `/api/plugins/proxmox2netbox/endpoints/` — `ProxmoxEndpoint` CRUD
-- `/api/plugins/proxmox2netbox/sync-processes/` — `SyncProcess` read
+- `/api/plugins/proxmox2netbox/sync-processes/` — `SyncProcess` history,
+  ordered newest first
 
 The serializers expose all endpoint fields including `netbox_site`, `netbox_vrf`, and `netbox_device_type`.

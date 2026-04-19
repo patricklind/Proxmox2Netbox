@@ -76,6 +76,24 @@
                     {% endif %}
                 </td>
             </tr>
+            <tr>
+                <td class="ps-3"><strong>Sync</strong></td>
+                <td>
+                    {% if object.sync_enabled %}
+                        <span class="badge text-bg-success">Enabled</span>
+                    {% else %}
+                        <span class="badge text-bg-secondary">Disabled</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="ps-3"><strong>Targets</strong></td>
+                <td>
+                    {% if object.sync_nodes %}<span class="badge text-bg-primary">Nodes</span>{% endif %}
+                    {% if object.sync_qemu_vms %}<span class="badge text-bg-primary">QEMU</span>{% endif %}
+                    {% if object.sync_lxc_containers %}<span class="badge text-bg-primary">LXC</span>{% endif %}
+                </td>
+            </tr>
         </table>
     </div>
 

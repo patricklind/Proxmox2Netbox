@@ -11,7 +11,7 @@ NetBox plugin for synchronizing Proxmox inventory data into NetBox (NetBox v4).
 ## Compatibility
 
 - NetBox: `>=4.2.0, <5.0.0`
-- Python: `>=3.8`
+- Python: `>=3.11`
 - Plugin package version in this repository: `1.2.9`
 
 ## What Works (Current Runtime)
@@ -27,9 +27,10 @@ Implemented sync flows:
 - Endpoint-level **Site** and **VRF** mapping — devices and IPs are placed in the correct NetBox Site/VRF
 - Endpoint-level **Node Device Type** — select a real NetBox DeviceType (e.g. Dell PowerEdge R740) for synced nodes; falls back to generic *Proxmox Node* type
 - **Per-node Device Type Mapping** — override device type per individual node name via *Node Type Mappings* UI (`Plugins → Proxmox2NetBox → Configuration → Node Type Mappings`)
+- **Per-endpoint sync controls** — enable/disable each endpoint and choose nodes, QEMU VMs, LXC containers, VM interfaces, VM IPs, guest-agent IP fallback, virtual disks, and stale-object pruning
 - Endpoint metadata refresh (`mode`, `version`, `repoid`, cluster name)
 - Sync process tracking in `SyncProcess`
-- Stale IP cleanup — IPs removed from Proxmox config are removed from NetBox interfaces
+- Stale IP cleanup — plugin-managed IPs removed from Proxmox config are removed from NetBox interfaces when endpoint pruning is enabled
 
 ## Runtime Architecture (Source of Truth)
 
@@ -91,6 +92,13 @@ In NetBox UI:
   - `username`
   - either `password` **or** (`token_name` + `token_value`)
   - host via `domain` and/or `ip_address`
+  - optional NetBox Site/VRF/Node Device Type mapping
+  - optional sync controls for what this endpoint may create, update, and prune
+
+Per-endpoint sync controls default to the previous behavior: endpoint enabled,
+nodes enabled, QEMU and LXC VM sync enabled, VM interfaces/IPs/disks enabled,
+guest-agent IP fallback enabled, and stale plugin-managed interfaces/IPs/disks
+pruned when Proxmox no longer reports them.
 
 ### Run sync from UI
 
@@ -143,11 +151,11 @@ python manage.py makemigrations --check --dry-run
 
 ### Tests
 
-Current repository state contains no active pytest test modules.
+The repository includes pytest coverage for the sync services, parsers, API
+views, and UI views.
 
 ```bash
 pytest
-# expected: no tests ran
 ```
 
 ## Publish to PyPI
@@ -215,13 +223,17 @@ proxmox2netbox/
   tables/
     __init__.py
   api/
-    serializers.py           # Exposes netbox_site, netbox_vrf, netbox_device_type
+    serializers.py           # Endpoint, node type mapping, and sync process serializers
+    views.py                 # NetBox REST API viewsets
   migrations/
-    0001_initial.py … 0016_proxmoxnodetypemapping_fix.py
+    0001_initial.py … 0020_endpoint_sync_controls.py
   templates/
     proxmox2netbox/
+      home.html
       proxmoxendpoint.html
       proxmoxnodetypemapping.html
+      syncprocess.html
+      inc/
   urls.py
 ```
 

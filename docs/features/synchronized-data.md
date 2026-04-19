@@ -2,6 +2,8 @@
 
 ## Proxmox Nodes → NetBox Devices
 
+Controlled per endpoint by `sync_nodes`.
+
 Each Proxmox cluster node is synced as a `dcim.Device`.
 
 | Proxmox field | NetBox field |
@@ -18,6 +20,8 @@ Each Proxmox cluster node is synced as a `dcim.Device`.
 
 ## VMs and Containers → NetBox Virtual Machines
 
+Controlled per endpoint by `sync_qemu_vms` and `sync_lxc_containers`.
+
 QEMU VMs and LXC containers are synced as `virtualization.VirtualMachine`.
 
 | Proxmox field | NetBox field |
@@ -29,6 +33,8 @@ QEMU VMs and LXC containers are synced as `virtualization.VirtualMachine`.
 | Memory (MB) | Memory |
 
 ## VM Interfaces → NetBox VMInterfaces
+
+Controlled per endpoint by `sync_vm_interfaces`.
 
 Each network interface from the Proxmox VM config (`net0`, `net1`, …) is synced as a `virtualization.VMInterface`.
 
@@ -47,4 +53,7 @@ IPs are synced per interface — each `VMInterface` only receives its own IPs.
 
 **VRF placement:** IPs are assigned to the VRF configured on the endpoint (if set).
 
-**Stale cleanup:** IPs that are no longer present in Proxmox config are removed from NetBox.
+**Stale cleanup:** IPs that are no longer present in Proxmox config are removed from NetBox when `prune_stale_vm_ips` is enabled.
+
+Virtual disk sync is controlled per endpoint by `sync_vm_disks`; stale
+plugin-managed disks are removed only when `prune_stale_vm_disks` is enabled.

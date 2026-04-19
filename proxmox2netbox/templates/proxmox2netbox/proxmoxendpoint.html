@@ -73,6 +73,41 @@
                                 {% endif %}
                             </td>
                         </tr>
+                        <tr>
+                            <th scope="row">Sync Enabled</th>
+                            <td>
+                                {% if object.sync_enabled %}
+                                    <span class="badge text-bg-success">Enabled</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Disabled</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Sync Targets</th>
+                            <td>
+                                {% if object.sync_nodes %}<span class="badge text-bg-primary">Nodes</span>{% endif %}
+                                {% if object.sync_qemu_vms %}<span class="badge text-bg-primary">QEMU</span>{% endif %}
+                                {% if object.sync_lxc_containers %}<span class="badge text-bg-primary">LXC</span>{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">VM Detail Sync</th>
+                            <td>
+                                {% if object.sync_vm_interfaces %}<span class="badge text-bg-info">Interfaces</span>{% endif %}
+                                {% if object.sync_vm_ips %}<span class="badge text-bg-info">IPs</span>{% endif %}
+                                {% if object.sync_guest_agent_ips %}<span class="badge text-bg-info">Guest Agent IPs</span>{% endif %}
+                                {% if object.sync_vm_disks %}<span class="badge text-bg-info">Disks</span>{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Pruning</th>
+                            <td>
+                                {% if object.prune_stale_vm_interfaces %}<span class="badge text-bg-warning">Interfaces</span>{% endif %}
+                                {% if object.prune_stale_vm_ips %}<span class="badge text-bg-warning">IPs</span>{% endif %}
+                                {% if object.prune_stale_vm_disks %}<span class="badge text-bg-warning">Disks</span>{% endif %}
+                            </td>
+                        </tr>
                     </table>
                 </div>
             </div>

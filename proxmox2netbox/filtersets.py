@@ -18,7 +18,10 @@ class SyncProcessFilterSet(NetBoxModelFilterSet):
 class ProxmoxEndpointFilterSet(NetBoxModelFilterSet):
     class Meta:
         model = ProxmoxEndpoint
-        fields = ['id', 'name', 'domain', 'ip_address', 'mode']
+        fields = [
+            'id', 'name', 'domain', 'ip_address', 'mode',
+            'sync_enabled', 'sync_nodes', 'sync_qemu_vms', 'sync_lxc_containers',
+        ]
 
     def search(self, queryset, name, value):
         return queryset.filter(name__icontains=value)
