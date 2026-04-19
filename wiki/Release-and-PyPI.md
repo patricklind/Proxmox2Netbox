@@ -4,26 +4,26 @@
 
 ### 1) Bump version
 
-Update these files to the same `X.Y.Z` value:
+Update both files to the same `X.Y.Z` version:
 
 - `pyproject.toml` (`[project].version`)
 - `proxmox2netbox/__init__.py` (`Proxmox2NetBoxConfig.version`)
 
 ### 2) Configure PyPI Trusted Publisher (OIDC)
 
-Configure a PyPI Trusted Publisher for this repository/workflow:
+In PyPI, configure a Trusted Publisher for:
 
 - Owner: `patricklind`
 - Repository: `Proxmox2Netbox`
 - Workflow: `.github/workflows/publish-python-package.yml`
 - Environment: `pypi`
 
-### 3) Create tag `vX.Y.Z`
+### 3) Create release tag `vX.Y.Z`
 
-Choose one method:
+Use either:
 
-- Via GitHub Actions **Create Release Tag** (manual) (**recommended**), or
-- Manually with git:
+- GitHub Actions **Create Release Tag** workflow (manual, recommended), or
+- Manual git commands:
 
 ```bash
 git tag -a vX.Y.Z -m "Release vX.Y.Z"
@@ -32,13 +32,11 @@ git push origin vX.Y.Z
 
 ### 4) Workflow behavior
 
-- `release.yml` runs on tag push, gates on lint/tests, and creates the GitHub Release.
-- `publish-python-package.yml` runs on `release: published` and publishes to PyPI.
-- `publish-python-package.yml` can also be run manually for retry.
+- `.github/workflows/release.yml` runs on tag push (`v*`), gates on lint/tests, and creates the GitHub Release.
+- `.github/workflows/publish-python-package.yml` runs on `release: published` and publishes to PyPI.
+- `.github/workflows/publish-python-package.yml` can also be triggered manually (`workflow_dispatch`) for retry.
 
-### 5) Release `v1.3.0`
-
-For this release, create and push:
+### 5) Example: `v1.3.0`
 
 ```bash
 git tag -a v1.3.0 -m "Release v1.3.0"
