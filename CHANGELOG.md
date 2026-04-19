@@ -6,6 +6,15 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [1.3.0] - 2026-04-19
+
+### Changed
+
+- Updated release documentation for maintainers, including tag-first release flow and PyPI Trusted Publisher (OIDC) guidance.
+- Bumped package/plugin version to `1.3.0`.
+
+---
+
 ## [1.2.9] - 2026-03-16
 
 ### Fixed

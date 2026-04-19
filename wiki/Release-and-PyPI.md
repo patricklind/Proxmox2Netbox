@@ -1,36 +1,46 @@
-# Release and PyPI
+# Tags and Releases
 
-## Version bump
+## Maintainer: Release to PyPI
 
-Update both:
+### 1) Bump version
 
-- `pyproject.toml` -> `[project].version`
-- plugin source config -> plugin `version`
+Update these files to the same `X.Y.Z` value:
 
-## Trusted Publisher (OIDC)
+- `pyproject.toml` (`[project].version`)
+- `proxmox2netbox/__init__.py` (`Proxmox2NetBoxConfig.version`)
 
-Configure in PyPI for project `proxmox2netbox`:
+### 2) Configure PyPI Trusted Publisher (OIDC)
+
+Configure a PyPI Trusted Publisher for this repository/workflow:
 
 - Owner: `patricklind`
 - Repository: `Proxmox2Netbox`
 - Workflow: `.github/workflows/publish-python-package.yml`
 - Environment: `pypi`
 
-## Release steps
+### 3) Create tag `vX.Y.Z`
+
+Choose one method:
+
+- Via GitHub Actions **Create Release Tag** (manual) (**recommended**), or
+- Manually with git:
 
 ```bash
 git tag -a vX.Y.Z -m "Release vX.Y.Z"
 git push origin vX.Y.Z
 ```
 
-Workflow behavior:
+### 4) Workflow behavior
 
-- `release.yml` creates GitHub Release from tag.
-- `publish-python-package.yml` publishes package to PyPI.
+- `release.yml` runs on tag push, gates on lint/tests, and creates the GitHub Release.
+- `publish-python-package.yml` runs on `release: published` and publishes to PyPI.
+- `publish-python-package.yml` can also be run manually for retry.
 
-## Validate publish
+### 5) Release `v1.3.0`
+
+For this release, create and push:
 
 ```bash
-pip install -U proxmox2netbox
-python -c "import importlib.metadata as m; print(m.version('proxmox2netbox'))"
+git tag -a v1.3.0 -m "Release v1.3.0"
+git push origin v1.3.0
 ```
