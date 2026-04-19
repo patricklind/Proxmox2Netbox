@@ -13,6 +13,7 @@
             {% endif %}
         </h5>
         <div class="card-body">
+            {% if can_sync %}
             <div class="d-flex justify-content-center gap-2 flex-wrap">
                 <button class="btn btn-outline-primary sync-btn"
                     hx-get="{% url 'plugins:proxmox2netbox:sync_devices' %}"
@@ -39,6 +40,11 @@
                     <i class="mdi mdi-refresh"></i> Full Update
                 </button>
             </div>
+            {% else %}
+            <div class="alert alert-warning mb-0">
+                Missing permission: proxmox2netbox.change_proxmoxendpoint
+            </div>
+            {% endif %}
 
             {# Schedule #}
             <span hx-get="{% url 'plugins:proxmox2netbox:get_sync_schedule' %}"

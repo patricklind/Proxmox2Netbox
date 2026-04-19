@@ -48,6 +48,20 @@ Each endpoint has switches for what the sync is allowed to touch:
 Defaults preserve the previous behavior: all object types are synced and stale
 plugin-managed VM interfaces, IPs, and disks are pruned.
 
+## NetBox Permissions
+
+For normal NetBox users, grant permissions through NetBox object permissions:
+
+- Open the plugin home page and endpoint status cards: `view` on
+  `proxmox2netbox.ProxmoxEndpoint`
+- Run manual sync actions and change the sync schedule: `change` on
+  `proxmox2netbox.ProxmoxEndpoint`
+- Manage endpoints: `view/add/change/delete` on
+  `proxmox2netbox.ProxmoxEndpoint`
+- View sync history: `view` on `proxmox2netbox.SyncProcess`
+- Manage node device type mappings: `view/add/change/delete` on
+  `proxmox2netbox.ProxmoxNodeTypeMapping`
+
 ## Per-Node Device Type Mapping
 
 For individual node hardware overrides, use:

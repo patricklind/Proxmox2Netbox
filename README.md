@@ -100,6 +100,18 @@ nodes enabled, QEMU and LXC VM sync enabled, VM interfaces/IPs/disks enabled,
 guest-agent IP fallback enabled, and stale plugin-managed interfaces/IPs/disks
 pruned when Proxmox no longer reports them.
 
+### NetBox Permissions
+
+For regular NetBox users, use object permissions:
+
+- `view` on `proxmox2netbox.ProxmoxEndpoint` to open the plugin home page and
+  endpoint status cards
+- `change` on `proxmox2netbox.ProxmoxEndpoint` to run manual sync actions or
+  change the sync schedule
+- `view` on `proxmox2netbox.SyncProcess` to view sync history
+- `view/add/change/delete` on `proxmox2netbox.ProxmoxNodeTypeMapping` to manage
+  per-node device type mappings
+
 ### Run sync from UI
 
 - `Plugins -> Proxmox2NetBox -> Full Update`

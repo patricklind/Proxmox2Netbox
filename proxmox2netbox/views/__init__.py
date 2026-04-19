@@ -1,6 +1,6 @@
 import pathlib
 
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.shortcuts import render
 from django.views import View
 
@@ -54,12 +54,12 @@ __all__ = (
     "sync_virtual_machines",
 )
 
-class SuperuserRequiredMixin(UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.is_superuser
+class ProxmoxEndpointViewPermissionMixin(LoginRequiredMixin, PermissionRequiredMixin):
+    permission_required = "proxmox2netbox.view_proxmoxendpoint"
+    raise_exception = True
 
 
-class HomeView(SuperuserRequiredMixin, View):
+class HomeView(ProxmoxEndpointViewPermissionMixin, View):
     """
     ## HomeView class-based view to handle incoming GET HTTP requests.
     
@@ -90,10 +90,11 @@ class HomeView(SuperuserRequiredMixin, View):
             {
                 'proxmox_endpoint_list': endpoints if endpoints.exists() else None,
                 'last_synced': last_synced,
+                'can_sync': request.user.has_perm("proxmox2netbox.change_proxmoxendpoint"),
             }
         )
 
-class ContributingView(SuperuserRequiredMixin, View):
+class ContributingView(ProxmoxEndpointViewPermissionMixin, View):
     """
     **ContributingView** handles the rendering of the contributing page for the Proxmox2NetBox project.
     

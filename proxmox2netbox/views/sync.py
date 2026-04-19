@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import permission_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
@@ -34,7 +34,7 @@ def _run_sync(request: HtmxHttpRequest, template_name: str, partial_template_nam
     return render(request, partial_template_name, {"result": result})
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@permission_required("proxmox2netbox.change_proxmoxendpoint", raise_exception=True)
 @require_GET
 def sync_devices(request: HtmxHttpRequest) -> HttpResponse:
     return _run_sync(
@@ -45,7 +45,7 @@ def sync_devices(request: HtmxHttpRequest) -> HttpResponse:
     )
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@permission_required("proxmox2netbox.change_proxmoxendpoint", raise_exception=True)
 @require_GET
 def sync_virtual_machines(request: HtmxHttpRequest) -> HttpResponse:
     return _run_sync(
@@ -56,7 +56,7 @@ def sync_virtual_machines(request: HtmxHttpRequest) -> HttpResponse:
     )
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@permission_required("proxmox2netbox.change_proxmoxendpoint", raise_exception=True)
 @require_GET
 def sync_full_update(request: HtmxHttpRequest) -> HttpResponse:
     return _run_sync(
@@ -88,7 +88,7 @@ def _get_scheduled_job():
     ).order_by('-created').first()
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@permission_required("proxmox2netbox.view_proxmoxendpoint", raise_exception=True)
 @require_GET
 def get_sync_schedule(request: HtmxHttpRequest) -> HttpResponse:
     job = _get_scheduled_job()
@@ -99,7 +99,7 @@ def get_sync_schedule(request: HtmxHttpRequest) -> HttpResponse:
     })
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@permission_required("proxmox2netbox.change_proxmoxendpoint", raise_exception=True)
 @require_POST
 def set_sync_schedule(request: HtmxHttpRequest) -> HttpResponse:
     from core.models import Job
