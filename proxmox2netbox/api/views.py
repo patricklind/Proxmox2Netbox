@@ -35,7 +35,7 @@ class Proxmox2NetBoxEndpointsView(APIRootView):
         return "Endpoints"
 
 class SyncProcessViewSet(NetBoxModelViewSet):
-    queryset = SyncProcess.objects.all()
+    queryset = SyncProcess.objects.order_by("-created", "-pk")
     serializer_class = SyncProcessSerializer
     filterset_class = SyncProcessFilterSet
 
