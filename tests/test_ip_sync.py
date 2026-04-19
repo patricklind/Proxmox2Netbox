@@ -56,11 +56,13 @@ _sync_mod = _load_sync_module()
 
 
 class _FakeIP:
-    def __init__(self, address, pk, vrf_id=None):
+    def __init__(self, address, pk, vrf_id=None, assigned_object_id=10, assigned_object_type_id=None):
         self.address = address
         self.pk = pk
         self.vrf_id = vrf_id
         self.vrf = None
+        self.assigned_object_id = assigned_object_id
+        self.assigned_object_type_id = assigned_object_type_id
         self.deleted = False
         self.saved_update_fields = []
 
@@ -79,10 +81,26 @@ class _FakeIPManager:
         self.created = []
 
     def filter(self, **kwargs):
-        return list(self._existing)
+        results = list(self._existing)
+        if "address" in kwargs:
+            results = [ip for ip in results if ip.address == kwargs["address"]]
+        if kwargs.get("vrf__isnull") is True:
+            results = [ip for ip in results if ip.vrf_id is None]
+        if "vrf" in kwargs:
+            vrf = kwargs["vrf"]
+            results = [ip for ip in results if ip.vrf_id == getattr(vrf, "pk", None)]
+        if "assigned_object_id" in kwargs:
+            results = [ip for ip in results if ip.assigned_object_id == kwargs["assigned_object_id"]]
+        return results
 
     def create(self, **kwargs):
-        new_ip = _FakeIP(kwargs["address"], pk=100 + len(self.created), vrf_id=getattr(kwargs.get("vrf"), "pk", None))
+        new_ip = _FakeIP(
+            kwargs["address"],
+            pk=100 + len(self.created),
+            vrf_id=getattr(kwargs.get("vrf"), "pk", None),
+            assigned_object_id=kwargs.get("assigned_object_id"),
+            assigned_object_type_id=getattr(kwargs.get("assigned_object_type"), "pk", None),
+        )
         self.created.append(new_ip)
         self._existing.append(new_ip)
         return new_ip
