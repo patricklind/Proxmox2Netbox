@@ -319,23 +319,39 @@ def _sync_iface_ips(vm, iface, ip_strings, vrf=None, tag=None):
         vrf_filter = {'vrf': vrf} if vrf is not None else {'vrf__isnull': True}
         reuse_candidate = None
         for candidate in IPAddress.objects.filter(address=addr, **vrf_filter):
+            if str(getattr(candidate, 'address', '')) != addr:
+                continue
             # Prefer unassigned (orphaned) IPs first.
-            if not candidate.assigned_object_id:
+            if not getattr(candidate, 'assigned_object_id', None):
                 reuse_candidate = candidate
                 break
             # Also reuse a managed IP whose previous assignment is gone.
-            if tag is not None and TaggedItem.objects.filter(
-                content_type=ip_content_type,
-                object_id=candidate.pk,
-                tag=tag,
-            ).exists():
-                reuse_candidate = candidate
-                break
+            if tag is not None:
+                tagged_item_qs = TaggedItem.objects.filter(
+                    content_type=ip_content_type,
+                    object_id=candidate.pk,
+                    tag=tag,
+                )
+                if hasattr(tagged_item_qs, 'exists'):
+                    is_managed = tagged_item_qs.exists()
+                else:
+                    is_managed = bool(tagged_item_qs.values_list('object_id', flat=True))
+                if is_managed:
+                    reuse_candidate = candidate
+                    break
 
         if reuse_candidate is not None:
             ip = reuse_candidate
             update_fields = []
-            if ip.assigned_object_type_id != content_type.pk or ip.assigned_object_id != iface.pk:
+            content_type_id = getattr(content_type, 'pk', None)
+            if content_type_id is not None:
+                type_mismatch = getattr(ip, 'assigned_object_type_id', None) != content_type_id
+            else:
+                type_mismatch = getattr(ip, 'assigned_object_type', None) != content_type
+            if (
+                type_mismatch
+                or getattr(ip, 'assigned_object_id', None) != iface.pk
+            ):
                 ip.assigned_object_type = content_type
                 ip.assigned_object_id = iface.pk
                 update_fields.extend(['assigned_object_type', 'assigned_object_id'])
