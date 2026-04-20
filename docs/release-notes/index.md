@@ -1,5 +1,36 @@
 # Release Notes
 
+## v1.2.10
+
+### Added — Per-endpoint sync controls
+
+Each Proxmox endpoint can now control which data domains are synced:
+
+- nodes
+- QEMU virtual machines
+- LXC containers
+- VM interfaces
+- VM IP addresses
+- QEMU guest-agent IP fallback
+- virtual disks
+- stale plugin-managed interface/IP/disk pruning
+
+Endpoints can also be disabled without deleting their configuration.
+
+### Fixed — NetBox permission alignment
+
+Plugin views now use NetBox object permissions consistently. Normal users can
+open plugin pages, run manual sync actions, view sync history, and manage node
+type mappings with standard NetBox permissions.
+
+### Fixed — NetBox 4.5 runtime issues
+
+The UI and sync flow were tested against NetBox 4.5.8, including plugin
+templates, API routes, endpoint sync controls, and direct full-update service
+runs.
+
+---
+
 ## v1.2.9
 
 ### Fixed — Manual VM interface IPs are no longer deleted during sync

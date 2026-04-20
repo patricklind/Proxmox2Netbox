@@ -38,6 +38,11 @@ git push origin vX.Y.Z
 - `.github/workflows/publish-python-package.yml` runs on `release: published` and publishes to PyPI.
 - `publish-python-package.yml` also supports manual `workflow_dispatch` for retry.
 
+If the release is created by GitHub Actions with the repository `GITHUB_TOKEN`,
+GitHub might not start the follow-up `release: published` publish workflow.
+When that happens, run **Publish Python Package** manually from Actions for the
+same tag.
+
 ## 5) Validate publish
 
 ```bash

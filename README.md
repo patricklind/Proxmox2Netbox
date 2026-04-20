@@ -12,7 +12,7 @@ NetBox plugin for synchronizing Proxmox inventory data into NetBox (NetBox v4).
 
 - NetBox: `>=4.2.0, <5.0.0`
 - Python: `>=3.11`
-- Plugin package version in this repository: `1.2.9`
+- Plugin package version in this repository: `1.2.10`
 
 ## What Works (Current Runtime)
 
@@ -63,7 +63,7 @@ If you run `netbox-docker`, also pin the package in your Docker requirements fil
 
 ```text
 # local_requirements.txt
-proxmox2netbox==1.2.9
+proxmox2netbox==1.2.10
 ```
 
 ### 2. Enable plugin
@@ -176,8 +176,6 @@ pytest
 
 - You must have access to the [`proxmox2netbox`](https://pypi.org/project/proxmox2netbox/) project on PyPI.
 - If the name is unavailable for your account, change `project.name` in `pyproject.toml` to a unique name before publishing.
-- Configure one of these publish methods:
-- Add `PYPI_API_TOKEN` as a repository secret in GitHub, or
 - Configure a matching Trusted Publisher in PyPI for this GitHub repository/workflow:
 - Owner: `patricklind`
 - Repository: `Proxmox2Netbox`
@@ -201,8 +199,9 @@ git tag -a vX.Y.Z -m "Release vX.Y.Z"
 git push origin vX.Y.Z
 ```
 
-- `release.yml` creates the GitHub Release from the tag and dispatches package publish.
-- `publish-python-package.yml` publishes to PyPI (release event and manual/dispatch supported).
+- `release.yml` creates the GitHub Release from the tag after lint/tests pass.
+- `publish-python-package.yml` publishes to PyPI using GitHub OIDC Trusted Publisher.
+- If no publish run appears after the release is created, run **Publish Python Package** manually from Actions for the same tag. GitHub releases created by Actions with `GITHUB_TOKEN` do not always emit a follow-up event that starts another workflow.
 - After publish:
 
 ```bash
