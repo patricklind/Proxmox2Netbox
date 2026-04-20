@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.2.10] - 2026-04-20
+
+### Added
+
+- **Endpoint sync controls** — added per-endpoint sync configuration for controlling which Proxmox data domains are synced.
+
+### Fixed
+
+- **NetBox permission alignment** — plugin views now use NetBox permissions consistently.
+- **Model and UI compatibility fixes** — resolved runtime issues in the Proxmox2NetBox UI and sync flow discovered during NetBox 4.5 testing.
+
 ---
 
 ## [1.2.9] - 2026-03-16
